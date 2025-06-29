@@ -1,0 +1,3 @@
+# make lines to install and not just a list
+rshiny
+ggplot2
