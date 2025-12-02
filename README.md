@@ -13,5 +13,5 @@ Group by month and year and identify shifts in peak timing, duration of prescenc
 Stats - time series modelling, visualization, statistical modeling
 R packages - ggplot2, seaborn?, Rshiny, Leaflet? (heat map)
 
-## Final product goal
+## Final Product
 Rshiny app and webpage
