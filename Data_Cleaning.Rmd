@@ -1,0 +1,23 @@
+---
+title: "Data Cleaning – Shearwaters Climate Project"
+author: "Danielle D."
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+    theme: flatly
+description: >
+  This notebook details the data cleaning workflow for the Shearwaters Climate project,
+  including preprocessing steps, variable transformations, and reproducibility notes.
+---
+
+# Data Cleaning
+
+## Overview
+
+This document walks through the full data cleaning process for the Shearwaters Climate project...
+
+## NOAA Data
+
+## eBird Data
