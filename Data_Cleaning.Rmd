@@ -16,8 +16,43 @@ description: >
 
 ## Overview
 
-This document walks through the full data cleaning process for the Shearwaters Climate project...
+This document walks through the full data cleaning process for the Shearwaters Climate project. 
 
 ## NOAA Data
 
+This data includes temperature, wind, sea surface temperature (sst), upwelling index, and enso index for Monterey and Bodega Bays.
+
+Data sourced from NOAA [dataset name], accessed on [date]. NOAA data are in the public domain.
+
+```{r}
+# weekly average? daily - too noisy
+# identify anomalies
+```
+
 ## eBird Data
+
+This data included records of sooty shearwater and pink-footed shearwater sightings in the Monterey and Bodega Bay areas. The sighting data includes the date, time, count, and occasionally other breeding data or comments.
+
+Put in the read me:
+Bird observation data sourced from the eBird Basic Dataset (Cornell Lab of Ornithology). Used under the Creative Commons Attribution-NonCommercial license.
+
+eBird Basic Dataset. Version: [year]. Cornell Lab of Ornithology, Ithaca, New York. https://ebird.org/data/download.
+
+```{r}
+# sooty shearwater (SOSH)
+
+sosh.santa.cruz
+
+sosh.monterey
+
+sosh.bodega
+
+# pink-footed shearwater (PFSH)
+
+pfsh.santa.cruz
+
+pfsh.monterey
+
+sosh.bodega
+```
+
