@@ -52,20 +52,90 @@ Bird observation data sourced from the eBird Basic Dataset (Cornell Lab of Ornit
 eBird Basic Dataset. Version: [year]. Cornell Lab of Ornithology, Ithaca, New York. https://ebird.org/data/download.
 
 ```{r}
-# sooty shearwater (SOSH)
+library(readr)
 
-sosh.santa.cruz
+ebird_data <- read_delim(
+  "eBird data/ebd_US-CA-053_pifshe_201501_202511_smp_relOct-2025/ebd_US-CA-053_pifshe_201501_202511_smp_relOct-2025.txt",
+  delim = "\t",
+  show_col_types = FALSE
+)
 
-sosh.monterey
+library(janitor)
 
-sosh.bodega
+ebird_data <- ebird_data %>%
+  janitor::clean_names()
 
-# pink-footed shearwater (PFSH)
+ebird_data
 
-pfsh.santa.cruz
+library(dplyr)
+library(lubridate)  # for easier date handling
 
-pfsh.monterey
+# Make sure date column is in Date or POSIXct format
+ebird_data$last_edited_date <- as.Date(ebird_data$last_edited_date)
 
-sosh.bodega
+# 1. Unique bird species
+unique_species <- unique(ebird_data$common_name)
+length(unique_species)   # How many species in total
+head(unique_species, 20) # See first 20 species
+
+# 2. Date range
+date_range <- range(ebird_data$last_edited_date, na.rm = TRUE)
+date_range
+
+# --------------
+
+ebird_data2 <- read_delim(
+  "eBird data/ebd_US-CA-087_pifshe_201501_202511_smp_relOct-2025/ebd_US-CA-087_pifshe_201501_202511_smp_relOct-2025_sampling.txt",
+  delim = "\t",
+  show_col_types = FALSE
+)
+
+ebird_data2 <- ebird_data2 %>%
+  janitor::clean_names()
+
+ebird_data2
+
+# Make sure date column is in Date or POSIXct format
+ebird_data2$last_edited_date <- as.Date(ebird_data2$last_edited_date)
+
+# 1. Unique bird species
+unique_species <- unique(ebird_data2$common_name)
+length(unique_species)   # How many species in total
+head(unique_species, 20) # See first 20 species
+
+# 2. Date range
+date_range <- range(ebird_data2$last_edited_date, na.rm = TRUE)
+date_range
+
+# --------------
+
+ebird_data3 <- read_delim(
+  "eBird data/ebd_US-CA-087_pifshe_201501_202511_smp_relOct-2025/ebd_US-CA-087_pifshe_201501_202511_smp_relOct-2025_sampling.txt",
+  delim = "\t",
+  show_col_types = FALSE
+)
+
+ebird_data3 <- ebird_data2 %>%
+  janitor::clean_names()
+
+ebird_data3
+
+# Make sure date column is in Date or POSIXct format
+ebird_data3$last_edited_date <- as.Date(ebird_data3$last_edited_date)
+
+# 1. Unique bird species
+unique_species <- unique(ebird_data3$common_name)
+length(unique_species)   # How many species in total
+head(unique_species, 20) # See first 20 species
+
+# 2. Date range
+date_range <- range(ebird_data3$last_edited_date, na.rm = TRUE)
+date_range
+
+# to do next...
+# figure out what data I have here (county, dates, species) - what do I still need to request?
+# combine all eBird data, get rid of columns you don't need
+
+# PFSH and SOSH data for Santa Cruz and Monterey counties, Bodega bay county too
 ```
 
