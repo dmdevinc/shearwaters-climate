@@ -31,13 +31,6 @@ for Monterey and Bodega Bays.
 Data sourced from NOAA [dataset name], accessed on [date]. NOAA data are in the public domain.
 
 ```{r}
-library(readr)
-one <- read.csv("noaa ata/ocldb1764961090.2001649.GLD.csv", header = F)
-two <- read.csv("noaa data/ocldb1764961090.2001649.MRB.csv", header = F)
-three <- read.csv("noaa data/ocldb1764961090.2001649.OSD.csv", header = TRUE)
-four <- read.csv("noaa data/ocldb1764961090.2001649.APB.csv", header = TRUE)
-five <- read.csv("noaa data/ocldb1764961090.2001649.PFL.csv", header = TRUE)
-
 # weekly average? daily - too noisy
 # identify anomalies
 ```
