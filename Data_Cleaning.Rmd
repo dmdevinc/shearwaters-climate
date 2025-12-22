@@ -18,17 +18,6 @@ description: >
 
 This document walks through the full data cleaning process for the Shearwaters Climate project. 
 
-## NOAA Data
-
-This data includes temperature, wind, sea surface temperature (sst), upwelling index, and enso index for Monterey and Bodega Bays.
-
-Data sourced from NOAA [dataset name], accessed on [date]. NOAA data are in the public domain.
-
-```{r}
-# weekly average? daily - too noisy
-# identify anomalies
-```
-
 ## eBird Data
 
 This data included records of sooty shearwater and pink-footed shearwater sightings in the Monterey and Bodega Bay areas. The sighting data includes the date, time, count, and occasionally other breeding data or comments.
@@ -38,24 +27,24 @@ Bird observation data sourced from the eBird Basic Dataset (Cornell Lab of Ornit
 
 eBird Basic Dataset. Version: [year]. Cornell Lab of Ornithology, Ithaca, New York. https://ebird.org/data/download.
 
-```{r}
-# sooty shearwater (SOSH)
-
-sosh.santa.cruz
-
-sosh.monterey
-
-sosh.bodega
-
-# pink-footed shearwater (PFSH)
-
-pfsh.santa.cruz
-
-pfsh.monterey
-
-sosh.bodega
+sooty shearwater (SOSH)
+pink-footed shearwater (PFSH)
 
 ```{r}
+# eBird Data
+
+# sosh.santa.cruz
+# 
+# sosh.monterey
+# 
+# sosh.bodega
+# 
+# pfsh.santa.cruz
+# 
+# pfsh.monterey
+# 
+# sosh.bodega
+
 library(readr)
 
 ebird_data <- read_delim(
@@ -89,7 +78,7 @@ date_range
 # --------------
 
 ebird_data2 <- read_delim(
-  "eBird data/ebd_US-CA-087_pifshe_201501_202511_smp_relOct-2025/ebd_US-CA-087_pifshe_201501_202511_smp_relOct-2025_sampling.txt",
+  "eBird data/ebd_US-CA-087_pifshe_201501_202511_smp_relOct-2025/ebd_US-CA-087_pifshe_201501_202511_smp_relOct-2025.txt",
   delim = "\t",
   show_col_types = FALSE
 )
@@ -114,12 +103,12 @@ date_range
 # --------------
 
 ebird_data3 <- read_delim(
-  "eBird data/ebd_US-CA-087_pifshe_201501_202511_smp_relOct-2025/ebd_US-CA-087_pifshe_201501_202511_smp_relOct-2025_sampling.txt",
+  "eBird data/ebd_US-CA-087_sooshe_201501_202511_smp_relOct-2025/ebd_US-CA-087_sooshe_201501_202511_smp_relOct-2025.txt",
   delim = "\t",
   show_col_types = FALSE
 )
 
-ebird_data3 <- ebird_data2 %>%
+ebird_data3 <- ebird_data3 %>%
   janitor::clean_names()
 
 ebird_data3
@@ -141,6 +130,17 @@ date_range
 # combine all eBird data, get rid of columns you don't need
 
 # PFSH and SOSH data for Santa Cruz and Monterey counties, Bodega bay county too
-```
+
+
 ```
 
+## NOAA Data
+
+This data includes temperature, wind, sea surface temperature (sst), upwelling index, and enso index for Monterey and Bodega Bays.
+
+Data sourced from NOAA [dataset name], accessed on [date]. NOAA data are in the public domain.
+
+```{r}
+# weekly average? daily - too noisy
+# identify anomalies
+```
