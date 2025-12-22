@@ -3,7 +3,7 @@ eBird data/
 *.csv
 *.txt
 
-.Rproj.user
+# Ignore RStudio temp files
 .Rhistory
 .RData
-.Ruserdata
+.Rproj.user
