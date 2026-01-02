@@ -20,118 +20,100 @@ This document walks through the full data cleaning process for the Shearwaters C
 
 ## eBird Data
 
-This data included records of sooty shearwater and pink-footed shearwater sightings in the Monterey and Bodega Bay areas. The sighting data includes the date, time, count, and occasionally other breeding data or comments.
+This data included records of sooty shearwater and pink-footed shearwater sightings in the Monterey and Bodega Bay areas (Monterey county and Sonoma county). The sighting data includes the date, time, count, and occasionally other breeding data or comments.
 
 Put in the read me:
 Bird observation data sourced from the eBird Basic Dataset (Cornell Lab of Ornithology). Used under the Creative Commons Attribution-NonCommercial license.
 
 eBird Basic Dataset. Version: [year]. Cornell Lab of Ornithology, Ithaca, New York. https://ebird.org/data/download.
 
-sooty shearwater (SOSH)
-pink-footed shearwater (PFSH)
-
 ```{r}
 # eBird Data
 
-# sosh.santa.cruz
-# 
-# sosh.monterey
-# 
-# sosh.bodega
-# 
-# pfsh.santa.cruz
-# 
-# pfsh.monterey
-# 
-# sosh.bodega
+# Data was pulled from Monterey, Santa Cruz, and Bodega counties for the dates January 1st, 2015 - November 30th, 2025.
+  # Bird codes:
+  # sooty shearwater (SOSH)
+  # pink-footed shearwater (PFSH)
 
 library(readr)
 
-ebird_data <- read_delim(
-  "eBird data/ebd_US-CA-053_pifshe_201501_202511_smp_relOct-2025/ebd_US-CA-053_pifshe_201501_202511_smp_relOct-2025.txt",
+# ----- pfsh.monterey
+
+pfsh.monterey <- read_delim(
+  "/Users/danielledevincenzi/Desktop/Learning R/eBird data/ebd_US-CA-053_pifshe_201501_202511_smp_relOct-2025/ebd_US-CA-053_pifshe_201501_202511_smp_relOct-2025.txt",
   delim = "\t",
   show_col_types = FALSE
 )
 
 library(janitor)
 
-ebird_data <- ebird_data %>%
+pfsh.monterey <- pfsh.monterey %>%
   janitor::clean_names()
 
-ebird_data
+# ----- sosh.monterey
 
-library(dplyr)
-library(lubridate)  # for easier date handling
-
-# Make sure date column is in Date or POSIXct format
-ebird_data$last_edited_date <- as.Date(ebird_data$last_edited_date)
-
-# 1. Unique bird species
-unique_species <- unique(ebird_data$common_name)
-length(unique_species)   # How many species in total
-head(unique_species, 20) # See first 20 species
-
-# 2. Date range
-date_range <- range(ebird_data$last_edited_date, na.rm = TRUE)
-date_range
-
-# --------------
-
-ebird_data2 <- read_delim(
-  "eBird data/ebd_US-CA-087_pifshe_201501_202511_smp_relOct-2025/ebd_US-CA-087_pifshe_201501_202511_smp_relOct-2025.txt",
+sosh.monterey <- read_delim(
+  "/Users/danielledevincenzi/Desktop/Learning R/eBird data/ebd_US-CA-053_sooshe_201501_202511_smp_relNov-2025/ebd_US-CA-053_sooshe_201501_202511_smp_relNov-2025_sampling.txt",
   delim = "\t",
   show_col_types = FALSE
 )
 
-ebird_data2 <- ebird_data2 %>%
+sosh.monterey <- sosh.monterey %>%
   janitor::clean_names()
 
-ebird_data2
+# ----- pfsh.sonoma
 
-# Make sure date column is in Date or POSIXct format
-ebird_data2$last_edited_date <- as.Date(ebird_data2$last_edited_date)
-
-# 1. Unique bird species
-unique_species <- unique(ebird_data2$common_name)
-length(unique_species)   # How many species in total
-head(unique_species, 20) # See first 20 species
-
-# 2. Date range
-date_range <- range(ebird_data2$last_edited_date, na.rm = TRUE)
-date_range
-
-# --------------
-
-ebird_data3 <- read_delim(
-  "eBird data/ebd_US-CA-087_sooshe_201501_202511_smp_relOct-2025/ebd_US-CA-087_sooshe_201501_202511_smp_relOct-2025.txt",
+pfsh.sonoma <- read_delim(
+  "/Users/danielledevincenzi/Desktop/Learning R/eBird data/ebd_US-CA-097_pifshe_smp_relNov-2025/ebd_US-CA-097_pifshe_smp_relNov-2025.txt",
   delim = "\t",
   show_col_types = FALSE
 )
 
-ebird_data3 <- ebird_data3 %>%
+pfsh.sonoma <- pfsh.sonoma %>%
   janitor::clean_names()
 
-ebird_data3
+# ----- sosh.sonoma
 
-# Make sure date column is in Date or POSIXct format
-ebird_data3$last_edited_date <- as.Date(ebird_data3$last_edited_date)
+sosh.sonoma <- read_delim(
+  "/Users/danielledevincenzi/Desktop/Learning R/eBird data/ebd_US-CA-097_sooshe_201501_202511_smp_relNov-2025/ebd_US-CA-097_sooshe_201501_202511_smp_relNov-2025_sampling.txt",
+  delim = "\t",
+  show_col_types = FALSE
+)
 
-# 1. Unique bird species
-unique_species <- unique(ebird_data3$common_name)
-length(unique_species)   # How many species in total
-head(unique_species, 20) # See first 20 species
+sosh.sonoma <- sosh.sonoma %>%
+  janitor::clean_names()
 
-# 2. Date range
-date_range <- range(ebird_data3$last_edited_date, na.rm = TRUE)
-date_range
+# ----- combine eBird data
+
+bird.master <- rbind(pfsh.monterey, sosh.monterey, pfsh.sonoma, sosh.sonoma)
+
+# ---------
 
 # to do next...
-# figure out what data I have here (county, dates, species) - what do I still need to request?
-# combine all eBird data, get rid of columns you don't need
+# should I remove any entries? Check data and clean for analysis, also remove unneeded columns
 
-# PFSH and SOSH data for Santa Cruz and Monterey counties, Bodega bay county too
+```
 
-
+```{r}
+# # ----- check date ranges
+# 
+# library(dplyr)
+# library(lubridate)  # for easier date handling
+# 
+# # Make sure date column is in Date or POSIXct format
+# pfsh.monterey$last_edited_date <- as.Date(pfsh.monterey$last_edited_date)
+# pfsh.santa.cruz$last_edited_date <- as.Date(pfsh.santa.cruz$last_edited_date)
+# sosh.santa.cruz$last_edited_date <- as.Date(sosh.santa.cruz$last_edited_date)
+# 
+# # Date ranges
+# date_range1 <- range(pfsh.monterey$last_edited_date, na.rm = TRUE)
+# date_range1
+# date_range2 <- range(pfsh.santa.cruz$last_edited_date, na.rm = TRUE)
+# date_range2
+# date_range3 <- range(sosh.santa.cruz$last_edited_date, na.rm = TRUE)
+# date_range3
+# 
+# # selected date range: January 1st, 2015 - November 30th, 2025
 ```
 
 ## NOAA Data
