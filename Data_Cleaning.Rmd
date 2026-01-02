@@ -18,6 +18,16 @@ description: >
 
 This document walks through the full data cleaning process for the Shearwaters Climate project. 
 
+```{r}
+# packages used
+library(readr) # read eBird data in
+library(tidyverse) 
+library(janitor) # used to standardize column names
+library(lubridate)  # for easier date handling
+library(ggplot2) 
+```
+
+
 ## eBird Data
 
 This data included records of sooty shearwater and pink-footed shearwater sightings in the Monterey and Bodega Bay areas (Monterey county and Sonoma county). The sighting data includes the date, time, count, and occasionally other breeding data or comments.
@@ -28,14 +38,13 @@ Bird observation data sourced from the eBird Basic Dataset (Cornell Lab of Ornit
 eBird Basic Dataset. Version: [year]. Cornell Lab of Ornithology, Ithaca, New York. https://ebird.org/data/download.
 
 ```{r}
-# eBird Data
+# Load eBird Data --
 
-# Data was pulled from Monterey, Santa Cruz, and Bodega counties for the dates January 1st, 2015 - November 30th, 2025.
+# Data was pulled from Monterey, Santa Cruz, and Bodega counties for the dates 
+# January 1st, 2015 - November 30th, 2025.
   # Bird codes:
   # sooty shearwater (SOSH)
   # pink-footed shearwater (PFSH)
-
-library(readr)
 
 # ----- pfsh.monterey
 
@@ -45,15 +54,14 @@ pfsh.monterey <- read_delim(
   show_col_types = FALSE
 )
 
-library(janitor)
-
+# standardize column names with janitor package 
 pfsh.monterey <- pfsh.monterey %>%
   janitor::clean_names()
 
 # ----- sosh.monterey
 
 sosh.monterey <- read_delim(
-  "/Users/danielledevincenzi/Desktop/Learning R/eBird data/ebd_US-CA-053_sooshe_201501_202511_smp_relNov-2025/ebd_US-CA-053_sooshe_201501_202511_smp_relNov-2025_sampling.txt",
+  "/Users/danielledevincenzi/Desktop/Learning R/eBird data/ebd_US-CA-053_sooshe_201501_202511_smp_relNov-2025/ebd_US-CA-053_sooshe_201501_202511_smp_relNov-2025.txt",
   delim = "\t",
   show_col_types = FALSE
 )
@@ -75,7 +83,7 @@ pfsh.sonoma <- pfsh.sonoma %>%
 # ----- sosh.sonoma
 
 sosh.sonoma <- read_delim(
-  "/Users/danielledevincenzi/Desktop/Learning R/eBird data/ebd_US-CA-097_sooshe_201501_202511_smp_relNov-2025/ebd_US-CA-097_sooshe_201501_202511_smp_relNov-2025_sampling.txt",
+  "/Users/danielledevincenzi/Desktop/Learning R/eBird data/ebd_US-CA-097_sooshe_201501_202511_smp_relNov-2025/ebd_US-CA-097_sooshe_201501_202511_smp_relNov-2025.txt",
   delim = "\t",
   show_col_types = FALSE
 )
@@ -85,35 +93,85 @@ sosh.sonoma <- sosh.sonoma %>%
 
 # ----- combine eBird data
 
-bird.master <- rbind(pfsh.monterey, sosh.monterey, pfsh.sonoma, sosh.sonoma)
-
-# ---------
-
-# to do next...
-# should I remove any entries? Check data and clean for analysis, also remove unneeded columns
+combined <- rbind(pfsh.monterey, sosh.monterey, pfsh.sonoma, sosh.sonoma)
 
 ```
 
 ```{r}
-# # ----- check date ranges
-# 
-# library(dplyr)
-# library(lubridate)  # for easier date handling
-# 
-# # Make sure date column is in Date or POSIXct format
-# pfsh.monterey$last_edited_date <- as.Date(pfsh.monterey$last_edited_date)
-# pfsh.santa.cruz$last_edited_date <- as.Date(pfsh.santa.cruz$last_edited_date)
-# sosh.santa.cruz$last_edited_date <- as.Date(sosh.santa.cruz$last_edited_date)
-# 
-# # Date ranges
-# date_range1 <- range(pfsh.monterey$last_edited_date, na.rm = TRUE)
-# date_range1
-# date_range2 <- range(pfsh.santa.cruz$last_edited_date, na.rm = TRUE)
-# date_range2
-# date_range3 <- range(sosh.santa.cruz$last_edited_date, na.rm = TRUE)
-# date_range3
-# 
-# # selected date range: January 1st, 2015 - November 30th, 2025
+# Cleaning eBird data --
+
+# ----- pull columns of interest to create master
+bird_master <- combined %>%
+  select(state_code, county, locality, locality_id, latitude, longitude, 
+         last_edited_date, common_name, observation_count, observation_type, 
+         duration_minutes, effort_distance_km, number_observers, observer_id, group_identifier)
+
+bird_master
+
+# ----- organize dates and filter out the range
+
+# Make sure date column is in Date or POSIXct format
+bird_master$last_edited_date <- as.Date(bird_master$last_edited_date)
+
+# filter data by exactly 10 years of data (Jan. 1, 2015 - Dec. 31, 2024)
+bird_master <- bird_master %>%
+  filter(last_edited_date >= "2015-01-01" & last_edited_date <= "2024-12-31")
+
+# check dates were updated
+date_range <- range(bird_master$last_edited_date, na.rm = TRUE)
+date_range
+
+# ----- remove odd entries
+
+# Make sure counts are numeric
+bird_master <- bird_master %>%
+  mutate(observation_count = as.numeric(observation_count))
+
+# Check max and min
+max_count <- max(bird_master$observation_count, na.rm = TRUE)
+min_count <- min(bird_master$observation_count, na.rm = TRUE)
+
+max_count
+min_count
+
+# Flag all unusually high counts, e.g., over 100,000
+extreme_counts <- bird_master %>%
+  filter(observation_count > 100000) %>%
+  select(last_edited_date, county, observation_count, locality, observer_id, group_identifier)
+
+# View them
+extreme_counts
+
+# check group names
+unique(extreme_counts$group_identifier)
+
+# only three groups make up all of these outliers, I would exclude. Likely extra 0 added, need to look into high counts below 10000 as well. Graph again once 100k+ entries are removed. Organize this cleaning section, don't overwrite dataframe, may want to retunr to unclean data. Graph as yhou go and include justification for removal.
+```
+
+```{r}
+# Graph eBird counts by date
+
+# ----- make observation count column numeric
+bird.master <- bird.master %>%
+  mutate(observation_count = as.numeric(observation_count))
+
+# ----- summarize counts per day per county
+bird.master <- bird.master %>%
+  group_by(last_edited_date, county) %>%
+  summarize(total_count = sum(observation_count, na.rm = TRUE)) %>%
+  ungroup()
+
+# ----- plot
+ggplot(bird.master, aes(x = last_edited_date, y = total_count, color = county)) +
+  geom_line() +              # lines per county
+  geom_point(alpha = 0.5) +  # optional: points for each day
+  labs(
+    x = "Date",
+    y = "Total Observations",
+    color = "County",
+    title = "Shearwater Observations by County Over Time"
+  ) +
+  theme_minimal()
 ```
 
 ## NOAA Data
