@@ -1,6 +1,9 @@
-# make lines to install and not just a list
+# R packages required for this project
+# Install using: install.packages(readLines("packages.txt"))
+
 rshiny
 ggplot2
 dplyr
 lubridate
 readr
+janitor
