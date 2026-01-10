@@ -4,7 +4,9 @@ Is there a climate diven shift in seasonal timing of seabird appearances for Soo
 
 ## Data
  - ebird: sightings in Bodega and Monterey Bays
+   Source: eBird Basic Dataset. Version: 2025. Cornell Lab of Ornithology, Ithaca, New York. https://ebird.org/data/download.
  - NOAA: temp, wind, sst, upwelling index, enso index
+   Source: TBD
 
 ## Methods 
 
