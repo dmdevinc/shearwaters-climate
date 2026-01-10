@@ -1,4 +1,4 @@
-# Shearwater seabird sightings and climate variables off the coast of California - Work in Progress
+# Shearwater eBird sightings and climate variables off the coast of California - Work in Progress
 
 Is there a climate diven shift in seasonal timing of seabird appearances for Sooty and Pink-footed Shearwaters, using eBird sighting data and NOAA weather data off the coast of California.
 
