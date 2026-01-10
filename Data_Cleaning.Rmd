@@ -7,46 +7,37 @@ output:
     toc: true
     toc_depth: 2
     theme: flatly
-description: >
-  This notebook details the data cleaning workflow for the Shearwaters Climate project,
-  including preprocessing steps, variable transformations, and reproducibility notes.
 ---
 
 # Data Cleaning
 
 ## Overview
 
-This document walks through the full data cleaning process for the Shearwaters Climate project. 
+This document walks through the full data cleaning process for the Shearwater
+Climate project. 
 
 ```{r}
 # packages used
-library(readr) # read eBird data in
-library(tidyverse) 
+library(readr) # to read eBird data
+library(tidyverse) # for data manipulation
 library(janitor) # used to standardize column names
-library(lubridate)  # for easier date handling
-library(ggplot2) 
+library(lubridate) # for easier date handling
+library(ggplot2) # for plotting
 ```
-
 
 ## eBird Data
 
-This data included records of sooty shearwater and pink-footed shearwater sightings in the Monterey and Bodega Bay areas (Monterey county and Sonoma county). The sighting data includes the date, time, count, and occasionally other breeding data or comments.
+This data included records of sooty shearwater (SOSH) and pink-footed shearwater (PFSH) sightings in the Monterey and Bodega Bay areas (Monterey county and Sonoma county). The sighting data includes the date, time, and count of individuals.
 
-Put in the read me:
 Bird observation data sourced from the eBird Basic Dataset (Cornell Lab of Ornithology). Used under the Creative Commons Attribution-NonCommercial license.
 
-eBird Basic Dataset. Version: [year]. Cornell Lab of Ornithology, Ithaca, New York. https://ebird.org/data/download.
+  eBird Basic Dataset. Version: 2025. Cornell Lab of Ornithology, Ithaca, New York.                    https://ebird.org/data/download.
 
 ```{r}
 # Load eBird Data --
 
 # Data was pulled from Monterey, Santa Cruz, and Bodega counties for the dates 
 # January 1st, 2015 - November 30th, 2025.
-  # Bird codes:
-  # sooty shearwater (SOSH)
-  # pink-footed shearwater (PFSH)
-
-# ----- pfsh.monterey
 
 pfsh.monterey <- read_delim(
   "/Users/danielledevincenzi/Desktop/Learning R/eBird data/ebd_US-CA-053_pifshe_201501_202511_smp_relOct-2025/ebd_US-CA-053_pifshe_201501_202511_smp_relOct-2025.txt",
@@ -54,22 +45,11 @@ pfsh.monterey <- read_delim(
   show_col_types = FALSE
 )
 
-# standardize column names with janitor package 
-pfsh.monterey <- pfsh.monterey %>%
-  janitor::clean_names()
-
-# ----- sosh.monterey
-
 sosh.monterey <- read_delim(
   "/Users/danielledevincenzi/Desktop/Learning R/eBird data/ebd_US-CA-053_sooshe_201501_202511_smp_relNov-2025/ebd_US-CA-053_sooshe_201501_202511_smp_relNov-2025.txt",
   delim = "\t",
   show_col_types = FALSE
 )
-
-sosh.monterey <- sosh.monterey %>%
-  janitor::clean_names()
-
-# ----- pfsh.sonoma
 
 pfsh.sonoma <- read_delim(
   "/Users/danielledevincenzi/Desktop/Learning R/eBird data/ebd_US-CA-097_pifshe_smp_relNov-2025/ebd_US-CA-097_pifshe_smp_relNov-2025.txt",
@@ -77,40 +57,39 @@ pfsh.sonoma <- read_delim(
   show_col_types = FALSE
 )
 
-pfsh.sonoma <- pfsh.sonoma %>%
-  janitor::clean_names()
-
-# ----- sosh.sonoma
-
 sosh.sonoma <- read_delim(
   "/Users/danielledevincenzi/Desktop/Learning R/eBird data/ebd_US-CA-097_sooshe_201501_202511_smp_relNov-2025/ebd_US-CA-097_sooshe_201501_202511_smp_relNov-2025.txt",
   delim = "\t",
   show_col_types = FALSE
 )
-
-sosh.sonoma <- sosh.sonoma %>%
-  janitor::clean_names()
-
-# ----- combine eBird data
-
-combined <- rbind(pfsh.monterey, sosh.monterey, pfsh.sonoma, sosh.sonoma)
-
 ```
 
 ```{r}
-# Cleaning eBird data --
+# Combine eBird data --
 
-# ----- pull columns of interest to create master
+# first, combine the above dataframes
+combined <- rbind(pfsh.monterey, sosh.monterey, pfsh.sonoma, sosh.sonoma)
+
+# standardize column names with janitor package 
+combined <- combined %>%
+  janitor::clean_names()
+
+# check parsing issue from above chunk - not a big deal, don't need this column
+problems(combined)
+
+# pull columns of interest to create master
 bird_master <- combined %>%
   select(state_code, county, locality, locality_id, latitude, longitude, 
          last_edited_date, common_name, observation_count, observation_type, 
          duration_minutes, effort_distance_km, number_observers, observer_id, group_identifier)
 
-bird_master
+# bird_master # check
+```
 
-# ----- organize dates and filter out the range
+```{r}
+# Clean eBird data - Dates
 
-# Make sure date column is in Date or POSIXct format
+# make sure date column is in Date or POSIXct format
 bird_master$last_edited_date <- as.Date(bird_master$last_edited_date)
 
 # filter data by exactly 10 years of data (Jan. 1, 2015 - Dec. 31, 2024)
@@ -120,58 +99,137 @@ bird_master <- bird_master %>%
 # check dates were updated
 date_range <- range(bird_master$last_edited_date, na.rm = TRUE)
 date_range
+```
 
-# ----- remove odd entries
 
-# Make sure counts are numeric
+```{r}
+# Clean eBird data - Counts
+
+# make sure counts are numeric
 bird_master <- bird_master %>%
   mutate(observation_count = as.numeric(observation_count))
 
-# Check max and min
+# check max and min
 max_count <- max(bird_master$observation_count, na.rm = TRUE)
 min_count <- min(bird_master$observation_count, na.rm = TRUE)
 
-max_count
-min_count
+max_count # this seems too high
+min_count # none go below 0
 
-# Flag all unusually high counts, e.g., over 100,000
+# flag all unusually high counts, e.g., over 100,000
 extreme_counts <- bird_master %>%
-  filter(observation_count > 100000) %>%
+  filter(observation_count > 200000) %>%
   select(last_edited_date, county, observation_count, locality, observer_id, group_identifier)
 
-# View them
+# view them
 extreme_counts
 
 # check group names
 unique(extreme_counts$group_identifier)
 
-# only three groups make up all of these outliers, I would exclude. Likely extra 0 added, need to look into high counts below 10000 as well. Graph again once 100k+ entries are removed. Organize this cleaning section, don't overwrite dataframe, may want to retunr to unclean data. Graph as yhou go and include justification for removal.
+# Only three groups make up all of the extreme counts. 
+
+# remove extreme counts
+bird_master_clean <- bird_master %>%
+  filter(observation_count <= 200000 | is.na(observation_count))
 ```
+# Everything below this is in progress...
 
 ```{r}
-# Graph eBird counts by date
+# Graph counts
 
-# ----- make observation count column numeric
-bird.master <- bird.master %>%
-  mutate(observation_count = as.numeric(observation_count))
-
-# ----- summarize counts per day per county
-bird.master <- bird.master %>%
+# ----------------------
+# gather the max counts per day per county 
+# note: can't sum the counts daily because observers count the same birds
+bird_master_day <- bird_master_clean %>%
   group_by(last_edited_date, county) %>%
-  summarize(total_count = sum(observation_count, na.rm = TRUE)) %>%
-  ungroup()
+  summarize(
+    daily_max = max(observation_count, na.rm = TRUE),
+    .groups = "drop"
+  )
 
-# ----- plot
-ggplot(bird.master, aes(x = last_edited_date, y = total_count, color = county)) +
+# plot - bar and points
+ggplot(bird_master_day, aes(x = last_edited_date, y = daily_max, color = county)) +
   geom_line() +              # lines per county
   geom_point(alpha = 0.5) +  # optional: points for each day
   labs(
     x = "Date",
     y = "Total Observations",
     color = "County",
-    title = "Shearwater Observations by County Over Time"
+    title = "Shearwater Observations Over Time"
   ) +
   theme_minimal()
+
+# ----------------------
+# heat map
+heat <- bird_master_clean %>%
+  mutate(
+    week = week(last_edited_date),
+    month = month(last_edited_date, label = TRUE)
+  ) %>%
+  group_by(county, year, week) %>%  # or month
+  summarise(weekly_max = max(max_count, na.rm = TRUE), .groups = "drop")
+
+ggplot(heat, aes(x = week, y = factor(year), fill = weekly_max)) +
+  geom_tile() +
+  facet_wrap(~county) +
+  scale_fill_viridis_c(option = "plasma") +
+  labs(
+    x = "Week of Year",
+    y = "Year",
+    fill = "Max Count",
+    title = "Weekly Max Shearwater Counts Heatmap"
+  ) +
+  theme_minimal()
+
+# ----------------------
+# Prepare data for box and density plots
+shearwater <- bird_master_clean %>%
+  mutate(
+    date = as_date(last_edited_date),
+    year = year(date),
+    month = month(date, label = TRUE),
+    day_of_year = yday(date)
+  ) %>%
+  group_by(county, date, year, day_of_year) %>%  # <-- group by county + date
+  summarize(
+    daily_max = max(observation_count, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Boxplots per year
+ggplot(shearwater, aes(x = factor(year), y = daily_max, fill = county)) +
+  geom_boxplot(outlier.colour = "red", outlier.shape = 1) +
+  labs(
+    x = "Year",
+    y = "Daily Max Count",
+    fill = "County",
+    title = "Distribution of Daily Max Counts per Year"
+  ) +
+  theme_minimal()
+
+# Density plots per year (seasonality)
+ggplot(shearwater, aes(x = day_of_year, y = ..density.., color = county, fill = county)) +
+  geom_density(alpha = 0.3) +
+  labs(
+    x = "Day of Year",
+    y = "Density of Max Counts",
+    title = "Seasonal Density of Shearwater Daily Max Counts"
+  ) +
+  theme_minimal()
+
+```
+
+```{r}
+# Brainstorming...
+
+# Fix graphs above, choose most representative.
+
+# Organize this cleaning section, don't overwrite dataframes, may want to return to unclean data. Graph as you go and include justification for removal.
+
+# I'm noticing no observations in Monterey pre 2015... could this be no birds or something else, like eBird surged in popularity in 2020 with covid? Need to look into this further.
+
+# Think about the goal, shiny app visualization of what? seasonality? interested in changes over time with climate variables... cool ways to visualize data... 
 ```
 
 ## NOAA Data
