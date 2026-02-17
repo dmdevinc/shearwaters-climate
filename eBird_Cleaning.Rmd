@@ -322,7 +322,7 @@ library(patchwork)
 bird_master_day_nonzero <- bird_master_day %>%
   filter(daily_max > 0)
 
-# 1️⃣ Combined counties plot
+# 1 Combined counties plot
 p_combined <- ggplot(bird_master_day_nonzero, 
                      aes(x = last_edited_date, y = daily_max, color = county)) +
   geom_point(alpha = 0.6, size = 2) +
@@ -335,7 +335,7 @@ p_combined <- ggplot(bird_master_day_nonzero,
   ) +
   theme_minimal()
 
-# 2️⃣ Monterey County only
+# 2 Monterey County only
 p_monterey <- bird_master_day_nonzero %>%
   filter(county == "Monterey") %>%
   ggplot(aes(x = last_edited_date, y = daily_max)) +
@@ -348,7 +348,7 @@ p_monterey <- bird_master_day_nonzero %>%
   ) +
   theme_minimal()
 
-# 3️⃣ Sonoma County only
+# 3 Sonoma County only
 p_sonoma <- bird_master_day_nonzero %>%
   filter(county == "Sonoma") %>%
   ggplot(aes(x = last_edited_date, y = daily_max)) +
