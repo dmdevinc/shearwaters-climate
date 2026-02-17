@@ -1,6 +1,4 @@
-# Shearwater Sightings and Climate off the Coast of California
-
-*Work in Progress*
+# Shearwater Sightings and Climate off the Coast of California - WIP
 
 Is there a climate driven shift in seasonal timing of Sooty (SOSH) nd Pink-footed Shearwatersn (PFSH) appearances off the coast of California in the last ten years, using eBird community science data and National Ocean and Atmospheric Administration (NOAA) data.
 
