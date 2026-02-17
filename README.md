@@ -4,8 +4,10 @@ Is there a climate driven shift in seasonal timing of Sooty (SOSH) nd Pink-foote
 
 ## Data (2015-2025)
  - eBird: SOSH and PFSH sightings in Bodega and Monterey Bays
+   
    Source: eBird Basic Dataset. Version: 2025. Cornell Lab of Ornithology, Ithaca, New York. https://ebird.org/data/download.
  - NOAA: temp, wind, sst, upwelling index, enso index
+   
    Source: TBD
 
 ## Methods 
