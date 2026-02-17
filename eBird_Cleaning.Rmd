@@ -11,26 +11,27 @@ output:
 
 # Introduction
 
-This data included date, time, and count of individuals of sooty shearwater 
-(SOSH) and pink-footed shearwater (PFSH) sightings in the Monterey and Bodega 
-Bay (Sonoma county) areas from January 1st, 2015 - November 30th, 2025.
+Community data including date, time, effort, and counts of sooty shearwater 
+(SOSH) and pink-footed shearwater (PFSH) in the Monterey and Bodega 
+Bay (or Sonoma county) areas from January 1st, 2015 - November 30th, 2025.
 
 Bird observation data sourced from the eBird Basic Dataset (Cornell Lab of 
-Ornithology). Used under the Creative Commons Attribution-NonCommercial license.
-
-  eBird Basic Dataset. Version: 2025. 
-  Cornell Lab of Ornithology, Ithaca, New York.
-  https://ebird.org/data/download.
+Ornithology). Used under the Creative Commons Attribution, Non-Commercial 
+license.
+    eBird Basic Dataset. Version: 2025. 
+    Cornell Lab of Ornithology, Ithaca, New York.
+    https://ebird.org/data/download.
   
 # Loading Workspace & Set Up
 
 ```{r}
-# packages used
+# packages
 library(readr) # read data
-library(tidyverse) # data manipulation
 library(janitor) # standardize column names
-library(lubridate) # easier date handling
+library(tidyverse) # data manipulation
+library(lubridate) # date handling
 library(ggplot2) # plotting
+library(sf) # map locality
 ```
 
 ## Reading in the Data
@@ -90,7 +91,7 @@ sosh.sonoma <- read_delim(
 ```{r}
 # Combine --
 
-# first, combine the above dataframes
+# combine the above dataframes
 combined <- rbind(pfsh.monterey, sosh.monterey, pfsh.sonoma, sosh.sonoma)
 
 # standardize column names with janitor package 
@@ -108,107 +109,148 @@ bird_master <- combined %>%
 
 # bird_master # check
 
-# make numeric columns numeric
+# make numeric columns numeric and set date class
 bird_master <- bird_master %>%
   mutate(observation_count = as.numeric(observation_count)) %>%
   mutate(duration_minutes = as.numeric(duration_minutes)) %>%
-  mutate(effort_distance_km = as.numeric(effort_distance_km)) 
+  mutate(effort_distance_km = as.numeric(effort_distance_km)) %>%
+  mutate(last_edited_date = as.Date(last_edited_date)) 
 
 ```
+
 # Integrity Analysis
 
 ```{r}
 # Explore --
 
-# County - expect two options
+# 1. County - expect two options
 unique_county <- unique(bird_master$county)
 unique_county
 # ok - only two options
 
-# Locality - generate a list
+# 2. Locality - generate a list
 unique_locality <- unique(bird_master$locality)
 # unique_locality
-# decide - may want to map and ensure all are coastal
+# map - check all locality points look normal
 
-# Date - check range
+# 3. Date - check range
 date_range <- range(bird_master$last_edited_date, na.rm = TRUE)
 date_range
 # remove - some dates outside desired range
 
-# Species - expect two options
+# 4. Species - expect two options
 unique_species <- unique(bird_master$common_name)
 unique_species
 # ok - only two options
 
-# Counts - check high/low counts
+# 5. Counts - check high/low counts
 summary(bird_master$observation_count)
-# remove - none go below 0, but the max is very high
+# identify - none go below 0, but likely outliers with high max, determine if
+# they should be removed later
 
-# Observation type - check options
+# 6. Observation type - check options
 unique_type <- unique(bird_master$observation_type)
 unique_type
-# decide - if there is any type I want to remove
+# remove - historical data - lacking confidence in effort details
+#          incidental - birding wasn't primary purpose
+#          banding - sample sizes different from incidental sightings
+# keep - travelling / stationary / and pelagic but look at pelagic type separate
 
-# Effort minutes -
+# 7. Effort duration (minutes) and distance (km) -
 summary(bird_master$duration_minutes)
-# decide - if there should be a max or min effort, or NAs removed
-
-# Effort distance km -
 summary(bird_master$effort_distance_km)
-# decide - if there should be a max or min effort, or NAs removed
+# ok - keep all for now but low duration/distance = less confidence in entry
 
-# Groups - check for duplicates
+# 9. Groups - check for duplicates
 dup_groups <- bird_master %>%
   mutate(is_dup = duplicated(group_identifier)) %>%  # use the column directly
   filter(is_dup) %>%
   select(-is_dup)
 nrow(dup_groups)
-# remove - there are many duplicated groups
+# remove - duplicated groups, as these are repeat counts
 ```
 
-## Explore Further - Locality, Counts, and Effort (minutes and durations) - WORKING
-
-Graph, summarize stats, determine what to remove before you do it
+## Explore Further - Locality and Counts
 
 ```{r}
-# Locality -- map
+# Locality -- quick map using lat/long
+
+# Convert to sf
+bird_sf <- bird_master %>%
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
+
+# World/US map background
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+# Plot from Bodega Bay to Monterey Bay
+ggplot() +
+  geom_sf(data = world, fill = "gray95", color = "gray80") +
+  geom_sf(data = bird_sf, aes(color = county), size = 1) +
+  coord_sf(xlim = c(-125, -120.5), ylim = c(34.9, 38.9)) +
+  theme_minimal() +
+  labs(
+    title = "Shearwater Checklist Locations"
+  )
+
+# plot Sonoma county
+ggplot() +
+  geom_sf(data = world, fill = "gray95", color = "gray80") +
+  geom_sf(data = bird_sf, aes(color = locality), size = 1) +
+  coord_sf(xlim = c(-124.5, -122.7), ylim = c(37.8, 38.9)) +
+  theme_minimal() +
+  labs(
+    title = "Sonoma County Checklists"
+  ) +
+  theme(
+    legend.position = "none"
+  )
+
+# plot Monterey county
+ggplot() +
+  geom_sf(data = world, fill = "gray95", color = "gray80") +
+  geom_sf(data = bird_sf, aes(color = locality), size = 1) +
+  coord_sf(xlim = c(-124, -120), ylim = c(34.9, 37)) +
+  theme_minimal() +
+  labs(
+    title = "Monterey Bay Checklists"
+  ) +
+  theme(
+    legend.position = "none"
+  )
+
+# the localities look fine for now, there are no points in unexpected places
 ```
 
 ```{r}
-# Counts -- determine 95 percentile and graph
-```
+# Counts -- graph and identify outliers
 
-```{r}
-# Effort (minutes and duration) -- determine 95 percentile and graph
-```
+# plot
+ggplot(bird_master, aes(x = observation_count)) +
+  geom_histogram(bins = 50) +
+  scale_x_log10() # use log if counts span several orders of magnitude
 
-# Changes to Data Based on Integrity Analyses - WORKING
-
-```{r}
-# Clean -- Locality
-```
-
-
-```{r}
-# Clean -- Dates
-# standardize and make sure all are within desired range
-
-# make sure date column is in Date or POSIXct format
-bird_master$last_edited_date <- as.Date(bird_master$last_edited_date)
-
-# filter data by exactly 10 years of data (Jan. 1, 2015 - Dec. 31, 2024)
+# Add a log-transformed count first to compress values so skew matters less
 bird_master <- bird_master %>%
-  filter(last_edited_date >= "2015-01-01" & last_edited_date <= "2024-12-31")
+  mutate(log_count = log10(observation_count + 1))  # +1 to handle zeros
 
-# check dates were updated
-date_range <- range(bird_master$last_edited_date, na.rm = TRUE)
-date_range
-```
+# Compute robust IQR on log-transformed counts
+Q1 <- quantile(bird_master$log_count, 0.25, na.rm = TRUE)
+Q3 <- quantile(bird_master$log_count, 0.75, na.rm = TRUE)
+IQR_val <- Q3 - Q1
 
-```{r}
-# Clean --Counts
+lower_bound <- Q1 - 1.5 * IQR_val
+upper_bound <- Q3 + 1.5 * IQR_val
 
-# determine 95 percentile
+# Flag outliers
+outliers <- bird_master %>%
+  filter(log_count < lower_bound | log_count > upper_bound)
+
+# Quick check
+nrow(outliers)
+
+# ---
+
+# The graph shows some particularly high counts, lets check
 
 # flag all unusually high counts, e.g., over 100,000
 extreme_counts <- bird_master %>%
@@ -221,30 +263,45 @@ extreme_counts
 # check group names
 unique(extreme_counts$group_identifier)
 
-# Only three groups make up all of the extreme counts. 
+# only three groups make up these counts, lets remove them
+```
 
-# remove extreme counts
+# Changes to Data Based on Integrity Analyses
+
+```{r}
+# Clean -- 
+
+# Combined cleaning pipelines
 bird_master_clean <- bird_master %>%
-  filter(observation_count <= 200000 | is.na(observation_count))
+  # 1. Dates - standardize formats and select range
+  mutate(last_edited_date = as.Date(last_edited_date)) %>%
+  filter(last_edited_date >= as.Date("2015-01-01") & 
+         last_edited_date <= as.Date("2024-12-31")) %>%
+  
+  # 2. Counts - identify outliers, remove NAs
+  mutate(is_outlier = log_count < lower_bound | log_count > upper_bound) %>%
+  # Filter rows
+  filter(
+    !is.na(observation_count),                 # remove missing counts
+    observation_count <= 10000 | is.na(observation_count)  # cap very high counts
+  ) %>%
+
+  
+  # 3. Observation Type - remove unwanted types
+  filter(observation_type %in% c("Stationary", "Traveling", "eBird Pelagic Protocol")) %>%
+  
+  # 4. Effort - remove NAs
+  # note shorter distance/duration = less confidence
+  filter(!is.na(duration_minutes), !is.na(effort_distance_km)) %>%
+  
+  # 5. Groups - remove duplicates
+  distinct(group_identifier, .keep_all = TRUE)
+
+# Check resulting date range
+range(bird_master_clean$last_edited_date, na.rm = TRUE)
 ```
 
-```{r}
-# Clean -- Observation Type
-```
-
-```{r}
-# Clean -- Effort (minutes and distance)
-```
-
-```{r}
-# Clean -- Groups
-# remove duplicate group ids
-
-ebird_clean <- bird_master %>%
-  distinct(group_id, .keep_all = TRUE)
-```
-
-# Brain dump ... (keep for now)
+# Explore Clean Data
 
 ```{r}
 # Graph counts
@@ -259,110 +316,92 @@ bird_master_day <- bird_master_clean %>%
     .groups = "drop"
   )
 
-# plot - bar and points
-ggplot(bird_master_day, aes(x = last_edited_date, y = daily_max, color = county)) +
-  geom_line() +              # lines per county
-  geom_point(alpha = 0.5) +  # optional: points for each day
+library(patchwork)
+
+# Filter out days with zero counts
+bird_master_day_nonzero <- bird_master_day %>%
+  filter(daily_max > 0)
+
+# 1️⃣ Combined counties plot
+p_combined <- ggplot(bird_master_day_nonzero, 
+                     aes(x = last_edited_date, y = daily_max, color = county)) +
+  geom_point(alpha = 0.6, size = 2) +
+  geom_line() +
+  labs(
+    x = "",
+    y = "Total Observations",
+    color = "County",
+    title = "Shearwater Observations - All Counties"
+  ) +
+  theme_minimal()
+
+# 2️⃣ Monterey County only
+p_monterey <- bird_master_day_nonzero %>%
+  filter(county == "Monterey") %>%
+  ggplot(aes(x = last_edited_date, y = daily_max)) +
+  geom_point(alpha = 0.6, size = 2, color = "steelblue") +
+  geom_line(color = "steelblue") +
   labs(
     x = "Date",
     y = "Total Observations",
-    color = "County",
-    title = "Shearwater Observations Over Time"
+    title = "Monterey County"
   ) +
   theme_minimal()
+
+# 3️⃣ Sonoma County only
+p_sonoma <- bird_master_day_nonzero %>%
+  filter(county == "Sonoma") %>%
+  ggplot(aes(x = last_edited_date, y = daily_max)) +
+  geom_point(alpha = 0.6, size = 2, color = "tomato") +
+  geom_line(color = "tomato") +
+  labs(
+    x = "Date",
+    y = " ",
+    title = "Sonoma County"
+  ) +
+  theme_minimal()
+
+# Combine Monterey and Sonoma side by side
+p_combined / (p_monterey | p_sonoma)
 
 # ----------------------
-# heat map
-heat <- bird_master_clean %>%
+
+# create density plots by year
+density <- bird_master_clean %>%
   mutate(
-    week = week(last_edited_date),
-    month = month(last_edited_date, label = TRUE)
+    last_edited_date = as.Date(last_edited_date),
+    year = year(last_edited_date),
+    day_of_year = yday(last_edited_date)
   ) %>%
-  group_by(county, year, week) %>%  # or month
-  summarise(weekly_max = max(max_count, na.rm = TRUE), .groups = "drop")
+  filter(year >= 2015)
 
-ggplot(heat, aes(x = week, y = factor(year), fill = weekly_max)) +
-  geom_tile() +
-  facet_wrap(~county) +
-  scale_fill_viridis_c(option = "plasma") +
-  labs(
-    x = "Week of Year",
-    y = "Year",
-    fill = "Max Count",
-    title = "Weekly Max Shearwater Counts Heatmap"
-  ) +
-  theme_minimal()
-
-# ----------------------
-# Prepare data for box and density plots
-shearwater <- bird_master_clean %>%
-  mutate(
-    date = as_date(last_edited_date),
-    year = year(date),
-    month = month(date, label = TRUE),
-    day_of_year = yday(date)
-  ) %>%
-  group_by(county, date, year, day_of_year) %>%  # <-- group by county + date
-  summarize(
-    daily_max = max(observation_count, na.rm = TRUE),
-    .groups = "drop"
-  )
-
-# Boxplots per year
-ggplot(shearwater, aes(x = factor(year), y = daily_max, fill = county)) +
-  geom_boxplot(outlier.colour = "red", outlier.shape = 1) +
-  labs(
-    x = "Year",
-    y = "Daily Max Count",
-    fill = "County",
-    title = "Distribution of Daily Max Counts per Year"
-  ) +
-  theme_minimal()
-
-# Density plots per year (seasonality)
-ggplot(shearwater, aes(x = day_of_year, y = ..density.., color = county, fill = county)) +
+ggplot(density, aes(x = day_of_year, fill = county, color = county)) +
   geom_density(alpha = 0.3) +
+  facet_wrap(~ year, ncol = 5) +
   labs(
     x = "Day of Year",
-    y = "Density of Max Counts",
-    title = "Seasonal Density of Shearwater Daily Max Counts"
+    y = "Density",
+    title = "Seasonal Distribution of Shearwater Observations by Year"
   ) +
   theme_minimal()
 
 ```
 
 ```{r}
-# Brainstorming...
+# Brainstorm chunk....
 
-# Fix graphs above, choose most representative.
+# To do:
 
-# Organize this cleaning section, don't overwrite dataframes, may want to return to unclean data. Graph as you go and include justification for removal.
+# 1) Max counts
+# I arbitrarily made the max count 10,000 just because it made better visuals
+# Think about this further, find 95th percentile and remove all above it?
 
-# I'm noticing no observations in Monterey pre 2015... could this be no birds or something else, like eBird surged in popularity in 2020 with covid? Need to look into this further.
+# 2) Visualize
+# Think about cool ways to visualize this data
 
-# Think about the goal, shiny app visualization of what? seasonality? interested in changes over time with climate variables... cool ways to visualize data... 
+# 3) NOAA data
+# Find and download NOAA data and clean in the same manner
 ```
 
-## NOAA Data
 
-This data includes temperature, wind, sea surface temperature (sst), upwelling index, and enso index for Monterey and Bodega Bays.
 
-Data sourced from NOAA [dataset name], accessed on [date]. NOAA data are in the public domain.
-
-https://www.ncei.noaa.gov/products/optimum-interpolation-sst
-https://www.cpc.ncep.noaa.gov
-https://coastwatch.pfeg.noaa.gov/data.html
-https://coastwatch.pfeg.noaa.gov/index.html
-
-This data includes...
-  - Sea surface temperature (sst) : ties to marine heatwaves, upwelling strength, and forage fish distribution
-  - Wind: strong northwest wings indicate cold, productive waters
-  - Upwelling Index (Bakun Index): productivity
-  - ENSO indices: large scale climate patterns that affect local productivity
-
-for Monterey and Bodega Bays.
-
-```{r}
-# weekly average? daily - too noisy
-# identify anomalies
-```
