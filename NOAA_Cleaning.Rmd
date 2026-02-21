@@ -11,32 +11,18 @@ output:
 
 # Introduction
 
-This data includes temperature, wind, sea surface temperature (sst), upwelling index, and enso index for Monterey and Bodega Bays.
+Open source sea surface temperature data (sst) in Celsius for Monterey and 
+Sonoma counties.
 
-Data sourced from NOAA [dataset name], accessed on [date]. NOAA data are in the public domain.
+Data sourced from NOAA [dataset name], accessed on [date]. 
+NOAA data are in the public domain.
 
-https://www.ncei.noaa.gov/products/optimum-interpolation-sst
-https://www.cpc.ncep.noaa.gov
-https://coastwatch.pfeg.noaa.gov/data.html
-https://coastwatch.pfeg.noaa.gov/index.html
-
-This data includes...
-  - Sea surface temperature (sst) : ties to marine heatwaves, upwelling strength, and forage fish distribution
-  - Wind: strong northwest wings indicate cold, productive waters
-  - Upwelling Index (Bakun Index): productivity
-  - ENSO indices: large scale climate patterns that affect local productivity
-
-for Monterey and Bodega Bays.
-
-```{r}
-# weekly average? daily - too noisy
-# identify anomalies
-```
+SST has ties to marine heatwaves, upwelling strength, and forage fish 
+distribution, all of which could affect arrival for shearwaters. 
 
 # Loading Workspace & Set Up
 
 ```{r}
-# packages
 # packages
 library(readr) # read data
 library(janitor) # standardize column names
@@ -45,8 +31,15 @@ library(lubridate) # date handling
 library(ggplot2) # plotting
 ```
 
+```{r}
+# reading in the data
+library(here)
+
+
+```
 
 # Integrity Analysis
 
 # Changes to Data Based on Integrity Analyses
 
+# Explore Clean Data

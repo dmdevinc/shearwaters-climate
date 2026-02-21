@@ -304,11 +304,11 @@ range(bird_master_clean$last_edited_date, na.rm = TRUE)
 # Explore Clean Data
 
 ```{r}
-# Graph counts
-
-# ----------------------
+# Scatter Plot --
 # gather the max counts per day per county 
 # note: can't sum the counts daily because observers count the same birds
+
+# gather counts
 bird_master_day <- bird_master_clean %>%
   group_by(last_edited_date, county) %>%
   summarize(
@@ -316,9 +316,10 @@ bird_master_day <- bird_master_clean %>%
     .groups = "drop"
   )
 
+# use to display graphs side by side
 library(patchwork)
 
-# Filter out days with zero counts
+# filter out days with zero counts
 bird_master_day_nonzero <- bird_master_day %>%
   filter(daily_max > 0)
 
@@ -335,7 +336,7 @@ p_combined <- ggplot(bird_master_day_nonzero,
   ) +
   theme_minimal()
 
-# 2 Monterey County only
+# 2 Monterey only
 p_monterey <- bird_master_day_nonzero %>%
   filter(county == "Monterey") %>%
   ggplot(aes(x = last_edited_date, y = daily_max)) +
@@ -348,7 +349,7 @@ p_monterey <- bird_master_day_nonzero %>%
   ) +
   theme_minimal()
 
-# 3 Sonoma County only
+# 3 Sonoma only
 p_sonoma <- bird_master_day_nonzero %>%
   filter(county == "Sonoma") %>%
   ggplot(aes(x = last_edited_date, y = daily_max)) +
@@ -363,10 +364,12 @@ p_sonoma <- bird_master_day_nonzero %>%
 
 # Combine Monterey and Sonoma side by side
 p_combined / (p_monterey | p_sonoma)
+```
 
-# ----------------------
+```{r}
+# Density - Plot
 
-# create density plots by year
+# get year and day
 density <- bird_master_clean %>%
   mutate(
     last_edited_date = as.Date(last_edited_date),
@@ -375,6 +378,7 @@ density <- bird_master_clean %>%
   ) %>%
   filter(year >= 2015)
 
+#plot
 ggplot(density, aes(x = day_of_year, fill = county, color = county)) +
   geom_density(alpha = 0.3) +
   facet_wrap(~ year, ncol = 5) +
@@ -384,7 +388,6 @@ ggplot(density, aes(x = day_of_year, fill = county, color = county)) +
     title = "Seasonal Distribution of Shearwater Observations by Year"
   ) +
   theme_minimal()
-
 ```
 
 ```{r}
