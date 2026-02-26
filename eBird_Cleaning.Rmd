@@ -11,7 +11,7 @@ output:
 
 # Introduction
 
-Community data including date, time, effort, and counts of sooty shearwater 
+Community science data including date, time, effort, and counts of sooty shearwater 
 (SOSH) and pink-footed shearwater (PFSH) in the Monterey and Bodega 
 Bay (or Sonoma county) areas from January 1st, 2015 - November 30th, 2025.
 
