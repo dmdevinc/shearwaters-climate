@@ -14,8 +14,9 @@ output:
 Open source sea surface temperature data (sst) in Celsius for Monterey and 
 Sonoma counties.
 
-Data sourced from NOAA [dataset name], accessed on [date]. 
-NOAA data are in the public domain.
+Data sourced from NOAA OISST-V2-AVHRR Daily (1/4 degree By time, depth, latitude, longitude), accessed on February 25, 2026. NOAA data are in the public domain.
+	
+Huang, Boyin; Liu, Chunying; Banzon, Viva F.; Freeman, Eric; Graham, Garrett; Hankins, William; Smith, Thomas M.; Zhang, Huai-Min. (2020): NOAA 0.25-degree Daily Optimum Interpolation Sea Surface Temperature (OISST), Version 2.1. [indicate subset used]. NOAA National Centers for Environmental Information. https://doi.org/10.25921/RE9P-PT57. Accessed [February 2026].
 
 SST has ties to marine heatwaves, upwelling strength, and forage fish 
 distribution, all of which could affect arrival for shearwaters. 
