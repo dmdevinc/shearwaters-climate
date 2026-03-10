@@ -1,0 +1,242 @@
+---
+title: "Visualizations"
+author: "Danielle D."
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+    theme: flatly
+---
+
+# Introduction
+
+This script is working.
+
+Things to do:
+1) eBird cleaning - Check that the outlier script is correct, think more about
+   if I want to remove outlier counts.
+2) Visualizations, start working in this document
+  - Aggregate datasets by month, other changes needed?
+  - How to combine count and sst data visually?
+  - Understand how to use SST anomaly data
+  - Play with visualizations... brainstorm how to create interesting RShiny 
+    Dashboard and explore data for statistical significance
+
+# Loading Workspace & Set Up
+
+```{r}
+# packages
+library(readxl) # read in xl files
+library(ggplot2) # plotting
+  library(patchwork) # to display plots side by side
+library(sf) # mapping
+  library(rnaturalearth) # base maps
+  library(ggspatial) # north arrow
+
+# read in cleaned data
+bird_df <- read_excel("bird_clean.xlsx")
+sst_df <- read_excel("sst_clean.xlsx")
+```
+
+# Visualize SST
+
+```{r}
+# scatterplot seasonality of sst and anom
+
+ggplot(sst_df, aes(x = date, y = sst)) +
+  geom_point(alpha = 0.05) +
+  theme_minimal() +
+  labs(
+    title = "Monterey Coastal SST",
+    x = "Date",
+    y = "SST (°C)"
+  )
+
+# I don't undertand this value yet
+ggplot(sst_df, aes(x = date, y = anom)) +
+  geom_point(alpha = 0.05) +
+  theme_minimal() +
+  labs(
+    title = "Monterey Coastal Anomaly",
+    x = "Date",
+    y = "SST Anomaly (°C)"
+  )
+```
+
+```{r}
+# heat map sst
+
+sst_monthly <- sst_df %>%
+  mutate(month = floor_date(date, "month")) %>%
+  group_by(month) %>%
+  summarize(mean_sst = mean(sst, na.rm = TRUE)) 
+sst_monthly %>%
+  mutate(
+    year = year(month),
+    month_num = month(month)
+  ) %>%
+  ggplot(aes(x = month_num, y = year, fill = mean_sst)) +
+  geom_tile() +
+  scale_x_continuous(breaks = 1:12) +        # whole numbers for months
+  scale_fill_gradient(low = "red", high = "yellow") +  # red-to-yellow
+  theme_minimal() +
+  labs(
+    title = "Monthly SST Heatmap",
+    x = "Month",
+    y = "Year",
+    fill = "SST (°C)"
+  )
+```
+# Visualize Shearwater Counts
+
+```{r}
+# Scatter Plot --
+# gather the max counts per day per county 
+# note: can't sum the counts daily because observers count the same birds
+
+# gather counts
+bird_master_day <- bird_df %>%
+  group_by(date, county) %>%
+  summarize(
+    daily_max = max(observation_count, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# use to display graphs side by side
+library(patchwork)
+
+# filter out days with zero counts
+bird_master_day_nonzero <- bird_master_day %>%
+  filter(daily_max > 0)
+
+# 1 Combined counties plot
+p_combined <- ggplot(bird_master_day_nonzero, 
+                     aes(x = date, y = daily_max, color = county)) +
+  geom_point(alpha = 0.6, size = 2) +
+  geom_line() +
+  labs(
+    x = "",
+    y = "Total Observations",
+    color = "County",
+    title = "Shearwater Observations - All Counties"
+  ) +
+  theme_minimal()
+
+# 2 Monterey only
+p_monterey <- bird_master_day_nonzero %>%
+  filter(county == "Monterey") %>%
+  ggplot(aes(x = date, y = daily_max)) +
+  geom_point(alpha = 0.6, size = 2, color = "steelblue") +
+  geom_line(color = "steelblue") +
+  labs(
+    x = "Date",
+    y = "Total Observations",
+    title = "Monterey County"
+  ) +
+  theme_minimal()
+
+# 3 Sonoma only
+p_sonoma <- bird_master_day_nonzero %>%
+  filter(county == "Sonoma") %>%
+  ggplot(aes(x = date, y = daily_max)) +
+  geom_point(alpha = 0.6, size = 2, color = "tomato") +
+  geom_line(color = "tomato") +
+  labs(
+    x = "Date",
+    y = " ",
+    title = "Sonoma County"
+  ) +
+  theme_minimal()
+
+# Combine Monterey and Sonoma side by side
+p_combined / (p_monterey | p_sonoma)
+```
+
+```{r}
+# Density - Plot
+
+# get year and day
+density <- bird_df %>%
+  mutate(
+    date = as.Date(date),
+    year = year(date),
+    day_of_year = yday(date)
+  ) %>%
+  filter(year >= 2015)
+
+#plot
+ggplot(density, aes(x = day_of_year, fill = county, color = county)) +
+  geom_density(alpha = 0.3) +
+  facet_wrap(~ year, ncol = 5) +
+  labs(
+    x = "Day of Year",
+    y = "Density",
+    title = "Seasonal Distribution of Shearwater Observations by Year"
+  ) +
+  theme_minimal()
+```
+
+# Visualize Shearwater Counts & SST
+
+```{r}
+# Investigate -- Lat/Long
+
+# Convert to sf
+noaa_m_sf <- sst_df %>%
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
+
+bird_sf <- bird_df %>%
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
+
+# World/US map background
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+# Plot from Bodega Bay to Monterey Bay
+ggplot() +
+  geom_sf(data = world, fill = "gray96", color = "gray80") + # optional green color: #DCEFD8
+  geom_sf(data = bird_sf, aes(color = "Shearwater Sightings"), size = 1) +
+  geom_sf(data = noaa_m_sf, aes(color = "SST Record Locations"), size = 1.5) +
+  scale_color_manual(
+    name = "Data Source",
+    values = c(
+      "Shearwater Sightings" = "lightblue",
+      "SST Record Locations" = "black"
+    )
+  ) +
+  coord_sf(xlim = c(-123.9, -120.5), ylim = c(34.8, 37.1)) +
+  theme_minimal() +
+  labs(
+    title = "Monterey County Shearwater Sightings and SST Recordings",
+    subtitle = "February 28, 2020 to December 31, 2025 (except EBird data...)"
+  ) +
+annotation_north_arrow(
+  location = "tr",
+  which_north = "true",
+  style = north_arrow_orienteering(
+    line_col = "black",
+    fill = c("black", "black")
+  ),
+  height = unit(1, "cm"),
+  width  = unit(1, "cm")
+) +
+  annotation_scale(
+    location = "br",    # bottom-left corner
+    width_hint = 0.2,   # relative size
+    bar_cols = c("black", "white"),
+    text_cex = 0.75
+  ) +
+  labs(caption = "Data source: NOAA and eBird, 2026") +
+  theme(plot.caption = element_text(hjust = 0, size = 10, color = "darkgray"),
+        axis.text = element_text(size = 11, color = "gray"),
+        legend.title = element_blank(),
+        legend.position = c(0.999, 0.08),
+        legend.justification = c(1, 0),
+        legend.box.background = element_rect(
+          fill = "white",
+          color = "black",
+          linewidth = 0.5),
+    panel.background = element_rect(fill = "aliceblue", color = NA))
+# I'll return to this graph to clean up the visuals, continuing to clean data below
+```
+
