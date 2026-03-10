@@ -13,7 +13,7 @@ output:
 
 Community science data including date, time, effort, and counts of sooty shearwater 
 (SOSH) and pink-footed shearwater (PFSH) in the Monterey and Bodega 
-Bay (or Sonoma county) areas from January 1st, 2015 - November 30th, 2025.
+Bay (or Sonoma county) areas from January 1st, 2015 - December 31st, 2025.
 
 Bird observation data sourced from the eBird Basic Dataset (Cornell Lab of 
 Ornithology). Used under the Creative Commons Attribution, Non-Commercial 
@@ -32,6 +32,7 @@ library(tidyverse) # data manipulation
 library(lubridate) # date handling
 library(ggplot2) # plotting
 library(sf) # map locality
+library(rnaturalearth) # some map features
 ```
 
 ## Reading in the Data
@@ -89,7 +90,7 @@ sosh.sonoma <- read_delim(
 ## Create Master Dataframe
 
 ```{r}
-# Combine --
+# Combine/Clean --
 
 # combine the above dataframes
 combined <- rbind(pfsh.monterey, sosh.monterey, pfsh.sonoma, sosh.sonoma)
