@@ -1,7 +1,7 @@
 # Shearwater Sightings and SST off the Coast of California - Working in Progress
 
 ## Investigating
-Is there a shift in seasonal timing of Sooty (SOSH) and Pink-footed Shearwatersn (PFSH) appearances off the coast of California in the last ten years and is this shift driven by sea surface temperature. Project using eBird community science data and National Ocean and Atmospheric Administration (NOAA) data.
+Is there a shift in seasonal timing of Sooty (SOSH) and Pink-footed Shearwatersn (PFSH) appearances off the coast of California and is this shift driven by sea surface temperature. Project using eBird community science data and National Ocean and Atmospheric Administration (NOAA) data.
 
 ## Data
  - **eBird**: SOSH and PFSH sightings in Bodega and Monterey Bays from January 1st, 2015 - December 31st, 2025.
