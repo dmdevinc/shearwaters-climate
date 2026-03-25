@@ -11,17 +11,7 @@ output:
 
 # Introduction
 
-This script is working.
-
-Things to do:
-1) eBird cleaning - Check that the outlier script is correct, think more about
-   if I want to remove outlier counts.
-2) Visualizations, start working in this document
-  - Aggregate datasets by month, other changes needed?
-  - How to combine count and sst data visually?
-  - Understand how to use SST anomaly data
-  - Play with visualizations... brainstorm how to create interesting RShiny 
-    Dashboard and explore data for statistical significance
+This script is in progress.
 
 # Loading Workspace & Set Up
 

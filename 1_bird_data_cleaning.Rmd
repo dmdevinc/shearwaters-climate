@@ -11,33 +11,34 @@ output:
 
 # Introduction
 
-Community science data including date, time, effort, and counts of sooty shearwater 
-(SOSH) and pink-footed shearwater (PFSH) in the Monterey and Bodega 
-Bay (or Sonoma county) areas from January 1st, 2015 - December 31st, 2025.
+Community science data including date, time, effort, and counts of sooty 
+shearwater (SOSH) and pink-footed shearwater (PFSH) in the Monterey and Bodega 
+Bay (aka Sonoma county) areas from January 1st, 2015 - December 31st, 2025.
 
 Bird observation data sourced from the eBird Basic Dataset (Cornell Lab of 
 Ornithology). Used under the Creative Commons Attribution, Non-Commercial 
 license.
+
     eBird Basic Dataset. Version: 2025. 
     Cornell Lab of Ornithology, Ithaca, New York.
     https://ebird.org/data/download.
   
 # Loading Workspace & Set Up
 
-```{r}
+```{r, results = 'hide'}
 # packages
 library(readr) # read data
 library(janitor) # standardize column names
 library(tidyverse) # data manipulation
 library(lubridate) # date handling
 library(ggplot2) # plotting
-library(sf) # map locality
-library(rnaturalearth) # some map features
+library(sf) # mapping
+  library(rnaturalearth) # base maps
 ```
 
 ## Reading in the Data
 
-```{r}
+```{r, results = 'hide'}
 # Load --
 
 # use "here" to manage raw files housed out of project (too large for GitHub)
@@ -87,6 +88,7 @@ sosh.sonoma <- read_delim(
   show_col_types = FALSE
 )
 ```
+
 ## Create Master Dataframe
 
 ```{r}
@@ -99,7 +101,7 @@ combined <- rbind(pfsh.monterey, sosh.monterey, pfsh.sonoma, sosh.sonoma)
 combined <- combined %>%
   janitor::clean_names()
 
-# check parsing issue from above chunk - not a big deal, don't need this column
+# check parsing issue from above chunk - leave for now
 problems(combined)
 
 # pull columns of interest to create master
@@ -110,13 +112,12 @@ bird_master <- combined %>%
 
 # bird_master # check
 
-# make numeric columns numeric and set date class
+# make numeric columns numeric and set date class for mutation
 bird_master <- bird_master %>%
   mutate(observation_count = as.numeric(observation_count)) %>%
   mutate(duration_minutes = as.numeric(duration_minutes)) %>%
   mutate(effort_distance_km = as.numeric(effort_distance_km)) %>%
   mutate(last_edited_date = as.Date(last_edited_date)) 
-
 ```
 
 # Integrity Analysis
@@ -124,32 +125,32 @@ bird_master <- bird_master %>%
 ```{r}
 # Explore --
 
-# 1. County - expect two options
+# 1) county - expect two options
 unique_county <- unique(bird_master$county)
 unique_county
 # ok - only two options
 
-# 2. Locality - generate a list
+# 2) locality - generate a list
 unique_locality <- unique(bird_master$locality)
 # unique_locality
-# map - check all locality points look normal
+# map below - check all locality points look normal
 
-# 3. Date - check range
+# 3) date - check range
 date_range <- range(bird_master$last_edited_date, na.rm = TRUE)
 date_range
 # remove - some dates outside desired range
 
-# 4. Species - expect two options
+# 4) species - expect two options
 unique_species <- unique(bird_master$common_name)
 unique_species
 # ok - only two options
 
-# 5. Counts - check high/low counts
+# 5) counts - check high/low counts
 summary(bird_master$observation_count)
 # identify - none go below 0, but likely outliers with high max, determine if
 # they should be removed later
 
-# 6. Observation type - check options
+# 6) observation type - check options
 unique_type <- unique(bird_master$observation_type)
 unique_type
 # remove - historical data - lacking confidence in effort details
@@ -157,14 +158,14 @@ unique_type
 #          banding - sample sizes different from incidental sightings
 # keep - travelling / stationary / and pelagic but look at pelagic type separate
 
-# 7. Effort duration (minutes) and distance (km) -
+# 7) effort duration (minutes) and distance (km) -
 summary(bird_master$duration_minutes)
 summary(bird_master$effort_distance_km)
 # ok - keep all for now but low duration/distance = less confidence in entry
 
-# 9. Groups - check for duplicates
+# 8) groups - check for duplicates
 dup_groups <- bird_master %>%
-  mutate(is_dup = duplicated(group_identifier)) %>%  # use the column directly
+  mutate(is_dup = duplicated(group_identifier)) %>% 
   filter(is_dup) %>%
   select(-is_dup)
 nrow(dup_groups)
@@ -273,138 +274,36 @@ unique(extreme_counts$group_identifier)
 # Clean -- 
 
 # Combined cleaning pipelines
-bird_master_clean <- bird_master %>%
-  # 1. Dates - standardize formats and select range
-  mutate(last_edited_date = as.Date(last_edited_date)) %>%
-  filter(last_edited_date >= as.Date("2015-01-01") & 
-         last_edited_date <= as.Date("2024-12-31")) %>%
+bird_clean <- bird_master %>%
+  # 1) dates - rename column, standardize format, seect range
+  rename(date = last_edited_date) %>%
+  filter(date >= as.Date("2015-01-01") & 
+         date <= as.Date("2024-12-31")) %>%
   
-  # 2. Counts - identify outliers, remove NAs
+  # 2) counts - identify outliers, remove NAs, cap high counts
   mutate(is_outlier = log_count < lower_bound | log_count > upper_bound) %>%
   # Filter rows
   filter(
-    !is.na(observation_count),                 # remove missing counts
-    observation_count <= 10000 | is.na(observation_count)  # cap very high counts
+    !is.na(observation_count),
+    observation_count <= 10000 | is.na(observation_count)  # cap high counts
   ) %>%
 
-  
-  # 3. Observation Type - remove unwanted types
+  # 3) observation type - remove unwanted types
   filter(observation_type %in% c("Stationary", "Traveling", "eBird Pelagic Protocol")) %>%
   
-  # 4. Effort - remove NAs
-  # note shorter distance/duration = less confidence
+  # 4) effort - remove NAs (remember, shorter distance/duration = less confidence)
   filter(!is.na(duration_minutes), !is.na(effort_distance_km)) %>%
   
-  # 5. Groups - remove duplicates
+  # 5) groups - remove duplicates
   distinct(group_identifier, .keep_all = TRUE)
 
 # Check resulting date range
-range(bird_master_clean$last_edited_date, na.rm = TRUE)
-```
+range(bird_clean$date, na.rm = TRUE)
+head(bird_clean)
 
-# Explore Clean Data
-
-```{r}
-# Scatter Plot --
-# gather the max counts per day per county 
-# note: can't sum the counts daily because observers count the same birds
-
-# gather counts
-bird_master_day <- bird_master_clean %>%
-  group_by(last_edited_date, county) %>%
-  summarize(
-    daily_max = max(observation_count, na.rm = TRUE),
-    .groups = "drop"
-  )
-
-# use to display graphs side by side
-library(patchwork)
-
-# filter out days with zero counts
-bird_master_day_nonzero <- bird_master_day %>%
-  filter(daily_max > 0)
-
-# 1 Combined counties plot
-p_combined <- ggplot(bird_master_day_nonzero, 
-                     aes(x = last_edited_date, y = daily_max, color = county)) +
-  geom_point(alpha = 0.6, size = 2) +
-  geom_line() +
-  labs(
-    x = "",
-    y = "Total Observations",
-    color = "County",
-    title = "Shearwater Observations - All Counties"
-  ) +
-  theme_minimal()
-
-# 2 Monterey only
-p_monterey <- bird_master_day_nonzero %>%
-  filter(county == "Monterey") %>%
-  ggplot(aes(x = last_edited_date, y = daily_max)) +
-  geom_point(alpha = 0.6, size = 2, color = "steelblue") +
-  geom_line(color = "steelblue") +
-  labs(
-    x = "Date",
-    y = "Total Observations",
-    title = "Monterey County"
-  ) +
-  theme_minimal()
-
-# 3 Sonoma only
-p_sonoma <- bird_master_day_nonzero %>%
-  filter(county == "Sonoma") %>%
-  ggplot(aes(x = last_edited_date, y = daily_max)) +
-  geom_point(alpha = 0.6, size = 2, color = "tomato") +
-  geom_line(color = "tomato") +
-  labs(
-    x = "Date",
-    y = " ",
-    title = "Sonoma County"
-  ) +
-  theme_minimal()
-
-# Combine Monterey and Sonoma side by side
-p_combined / (p_monterey | p_sonoma)
-```
-
-```{r}
-# Density - Plot
-
-# get year and day
-density <- bird_master_clean %>%
-  mutate(
-    last_edited_date = as.Date(last_edited_date),
-    year = year(last_edited_date),
-    day_of_year = yday(last_edited_date)
-  ) %>%
-  filter(year >= 2015)
-
-#plot
-ggplot(density, aes(x = day_of_year, fill = county, color = county)) +
-  geom_density(alpha = 0.3) +
-  facet_wrap(~ year, ncol = 5) +
-  labs(
-    x = "Day of Year",
-    y = "Density",
-    title = "Seasonal Distribution of Shearwater Observations by Year"
-  ) +
-  theme_minimal()
-```
-
-```{r}
-# Brainstorm chunk....
-
-# To do:
-
-# 1) Max counts
-# I arbitrarily made the max count 10,000 just because it made better visuals
-# Think about this further, find 95th percentile and remove all above it?
-
-# 2) Visualize
-# Think about cool ways to visualize this data
-
-# 3) NOAA data
-# Find and download NOAA data and clean in the same manner
+# save the data as an Excel file
+library(writexl)
+write_xlsx(bird_clean, "bird_clean.xlsx")
 ```
 
 

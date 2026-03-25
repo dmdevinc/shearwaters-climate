@@ -11,8 +11,7 @@ output:
 
 # Introduction
 
-Open source sea surface temperature data (sst) in Celsius for Monterey county.
-I wasn't able to find sst data for Sonoma County.
+Open source sea surface temperature data (sst) in Celsius for Monterey county. I wasn't able to find sst data for Sonoma County.
 
 Data sourced from NOAA OISST-V2-AVHRR Daily (1/4 degree By time, depth, latitude, longitude), accessed on February 25, 2026. NOAA data are in the public domain.
 	
@@ -30,6 +29,8 @@ library(janitor) # standardize column names
 library(tidyverse) # data manipulation
 library(lubridate) # date handling
 library(ggplot2) # plotting
+library(sf) # mapping
+  library(rnaturalearth) # base maps
 ```
 
 ## Reading in the Data
@@ -60,18 +61,27 @@ head(monterey_sst)
 ```{r}
 # Clean --
 
-monterey_sst <- monterey_sst %>%            # clean in the same way
-  slice(-1) %>% # remove first row of data, additional header data
+# make remove first row, set date class, make columns numeric
+monterey_sst <- monterey_sst %>%            
+  slice(-1) %>% # remove additional header data
   mutate( 
     datetime = ymd_hms(time, tz = "UTC"),   # convert character to POSIXct
     date = as_date(datetime),               # extract date
     time = format(datetime, "%H:%M:%S")     # extract time as string
   ) %>%
-    mutate(
-      sst = as.numeric(sst),
-      latitude = as.numeric(latitude),
-      longitude = as.numeric(longitude)
+  mutate(
+    sst = as.numeric(sst),
+    latitude = as.numeric(latitude),
+    longitude = as.numeric(longitude),
+    anom = as.numeric(anom)
     )
+
+# change longitude degrees 0-360 to the −180–180 system to map
+monterey_sst$longitude <- ifelse(
+  monterey_sst$longitude > 180,
+  monterey_sst$longitude - 360,
+  monterey_sst$longitude
+)
 
 # check
 head(monterey_sst)
@@ -82,50 +92,45 @@ head(monterey_sst)
 ```{r}
 # Explore --
 
-# 1. Date/Time - check range (UTC)
+# 1) date - check range (UTC)
 date_range_m <- range(monterey_sst$date)
 date_range_m
-# date range is 2/28/2020 to 12/26/2025
+# ok - date range is 2/28/2020 to 12/26/2025
 
+# 2) time - check range
 time_range_m <- range(monterey_sst$time)
 time_range_m
-# All times are 12:00 PM, standardized
-# remove - date/time and time columns
+# remove - not needed since all sst records taken at 12:00 PM
 
-# 2. Depth - (m)
+# 3) depth (m) - check range 
 depth_range_m <- range(monterey_sst$depth, na.rm = TRUE)
 depth_range_m
-# I wasn't interested in depth in my data, all 0.0m depth
-# remove - depth column
+# remove - not needed since all records taken at 0m (sea level)
 
-# 3. Lat (degrees north) & Long (degrees east)
+# 4) Lat (degrees north) & Long (degrees east)
 lat_range <- range(monterey_sst$latitude, na.rm = TRUE)
 long_range <- range(monterey_sst$longitude, na.rm = TRUE)
 lat_range
 long_range
-# 
+# plot below - checked bounding area, explore more below
 
-# 4. SST - (Celsius)
-sst_summary_m <- summary(monterey_sst$sst, na.rm = TRUE)
-sst_summary_m
-# clean NAs, fix sonoma data, other data looks ok
+# 5) sst (Celsius) - check range
+sst_summary <- summary(monterey_sst$sst, na.rm = TRUE)
+sst_summary
+# remove - NA values
+
+# 6) sst anomaly (Celsius) - check range
+anom_summary <- summary(monterey_sst$anom, na.rm = TRUE)
+anom_summary
+# ok
 ```
 
 ## Explore Further - Lat/Long
 
 ```{r}
-# Investigate - Lat/Long
+# Investigate -- quick map of lat/long points for sst and ebird sightings
 
-library(sf)
-library(rnaturalearth) # world map
-library(ggspatial) # north arrow
-
-# change longitude from degrees 0-360
-monterey_sst$longitude <- ifelse(
-  monterey_sst$longitude > 180,
-  monterey_sst$longitude - 360,
-  monterey_sst$longitude
-)
+# please note, you need the bird_sf dataframe from the eBird_Cleaning.Rmd
 
 # Convert to sf
 noaa_m_sf <- monterey_sst %>%
@@ -136,7 +141,7 @@ world <- ne_countries(scale = "medium", returnclass = "sf")
 
 # Plot from Bodega Bay to Monterey Bay
 ggplot() +
-  geom_sf(data = world, fill = "gray96", color = "gray80") + # optional green color: #DCEFD8
+  geom_sf(data = world, fill = "gray96", color = "gray80") +
   geom_sf(data = bird_sf, aes(color = "Shearwater Sightings"), size = 1) +
   geom_sf(data = noaa_m_sf, aes(color = "SST Record Locations"), size = 1.5) +
   scale_color_manual(
@@ -149,26 +154,7 @@ ggplot() +
   coord_sf(xlim = c(-123.9, -120.5), ylim = c(34.8, 37.1)) +
   theme_minimal() +
   labs(
-    title = "Monterey County Shearwater Sightings and SST Recordings",
-    subtitle = "February 28, 2020 to December 31, 2025 (except EBird data...)"
-  ) +
-annotation_north_arrow(
-  location = "tr",
-  which_north = "true",
-  style = north_arrow_orienteering(
-    line_col = "black",
-    fill = c("black", "black")
-  ),
-  height = unit(1, "cm"),
-  width  = unit(1, "cm")
-) +
-  annotation_scale(
-    location = "br",    # bottom-left corner
-    width_hint = 0.2,   # relative size
-    bar_cols = c("black", "white"),
-    text_cex = 0.75
-  ) +
-  labs(caption = "Data source: NOAA and eBird, 2026") +
+    title = "Monterey County Shearwater Sightings and SST Recordings") +
   theme(plot.caption = element_text(hjust = 0, size = 10, color = "darkgray"),
         axis.text = element_text(size = 11, color = "gray"),
         legend.title = element_blank(),
@@ -179,12 +165,34 @@ annotation_north_arrow(
           color = "black",
           linewidth = 0.5),
     panel.background = element_rect(fill = "aliceblue", color = NA))
-# I want these to overlap more, perhaps get the range of lat/long for monterey
-# then use that to parse the area, we can do without the points overlapping
-# inland as well.
+# thoughts: it looks like the sst data points cover a good amount of the area 
+# where shearwaters were sighted off the Monterey coast.
 ```
-
 
 # Changes to Data Based on Integrity Analyses
 
-# Explore Clean Data
+```{r}
+# Clean --
+
+# Note: I already changed longitude from 0–360 system to the −180–180 system 
+# when I created the master dataframe.
+
+# Combined cleaning pipelines
+sst_clean <- monterey_sst %>%
+  
+  # 1) time/depth - remove unnecessary columns
+  select(-time, -datetime, -depth) %>%
+  
+  # 2) sst - remove missing SST values
+  filter(!is.na(sst)) %>%
+  
+  # reorder columns with date first
+  select(date, everything())
+
+# Check
+head(sst_clean)
+
+# save the data as an Excel file
+library(writexl)
+write_xlsx(sst_clean, "sst_clean.xlsx")
+```

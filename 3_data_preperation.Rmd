@@ -1,0 +1,174 @@
+---
+title: "Data Preperations"
+author: "Danielle D."
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+    theme: flatly
+---
+
+# Analysis Introduction
+
+# Loading Work Space & Set Up
+
+```{r}
+# packages
+library(readxl) # read in xl files
+library(ggplot2) # plotting
+library(tidyverse) # data manipulation
+library(lubridate) # date handling
+
+# read in cleaned data
+bird_df <- read_excel("data/clean_bird.xlsx")
+sst_df <- read_excel("data/clean_sst.xlsx")
+
+# check that all of the data types are correct, no changes needed
+str(bird_df)
+str(sst_df)
+```
+
+# Aggregate SST by Month
+
+```{r}
+sst_monthly <- sst_df %>%
+  mutate(date = as.Date(date, format = "%Y-%m-%d"),
+         year = year(date),
+         month = month(date),
+         month_date = floor_date(date, "month")) %>%
+         # month_date will make it easier to plot and join data later
+  group_by(year, month, month_date) %>%
+  summarise(sst_monthly_avg = mean(sst),
+            sd_sst = sd(sst),
+            anom_monthly_avg = mean(anom),
+            sd_anom = sd(anom),
+            n = n(),
+            .groups = "drop")
+
+sst_monthly # check data
+```
+
+# Daily Max Bird Counts
+
+Observers can count the same birds in a flock, so I first took the maximum
+number of birds counted per day. I did not average the counts per month because
+we'd lose pulses in counts.
+
+```{r}
+# summarize and group my species and county per day
+bird_daily <- bird_df %>%
+  mutate(date = as.Date(date, format = "%Y-%m-%d"),
+         year = year(date),
+         month = month(date),
+         month_date = floor_date(date, "month")) %>%
+  group_by(date, year, month, month_date, county, common_name) %>%
+  summarise(daily_max_count = max(observation_count, na.rm = TRUE),
+            .groups = "drop")
+
+# check
+head(bird_daily)
+nrow(bird_df)
+nrow(bird_daily)
+
+# note: I can decide later to keep more columns from bird_df here if needed.
+```
+
+# Join Aggregated SST and Bird Counts
+
+```{r}
+bird_sst <- bird_daily %>%
+  left_join(sst_monthly, by = c("month_date", "year", "month"))
+
+bird_sst # check
+
+# save the data as an Excel file
+library(writexl)
+write_xlsx(sst_clean, "data/bird_sst.xlsx")
+```
+
+# Preliminary Plots
+
+1) Raw counts over time by species and county
+
+```{r}
+ggplot(bird_sst, aes(x = date, y = daily_max_count, color = common_name)) +
+  geom_point(alpha = 0.5) +
+  scale_y_log10() +
+  facet_wrap(~county) +
+  labs(title = "Daily Max Counts Over Time", x = "Date", y = "Count (log scale)") +
+  theme_minimal()
+```
+
+2) Count distribution by species
+
+```{r}
+ggplot(bird_sst, aes(x = common_name, y = daily_max_count, fill = common_name)) +
+  geom_boxplot() +
+  scale_y_log10() +
+  facet_wrap(~county) +
+  labs(title = "Count Distribution by Species", x = NULL, y = "Count (log scale)") +
+  theme_minimal()
+``` 
+
+3) Seasonal arrival pattern — counts by month
+
+```{r}
+ggplot(bird_sst, aes(x = month, y = daily_max_count, color = common_name)) +
+  geom_point(alpha = 0.4) +
+  geom_smooth(se = FALSE) +
+  scale_y_log10() +
+  scale_x_continuous(breaks = 1:12, labels = month.abb) +
+  facet_wrap(~county) +
+  labs(title = "Seasonal Count Patterns", x = "Month", y = "Count (log scale)") +
+  theme_minimal()
+```
+
+4) SST over time (Monterey only)
+
+```{r}
+sst_monthly %>%
+  ggplot(aes(x = month_date, y = sst_monthly_avg)) +
+  geom_line(color = "steelblue") +
+  geom_ribbon(aes(ymin = sst_monthly_avg - sd_sst,
+                  ymax = sst_monthly_avg + sd_sst), alpha = 0.2, fill = "steelblue") +
+  labs(title = "Monthly SST - Monterey", x = "Date", y = "SST (°C)") +
+  theme_minimal()
+```
+
+5) SST vs count scatter (Monterey only)
+
+```{r}
+bird_sst %>%
+  filter(county == "Monterey") %>%
+  ggplot(aes(x = sst_monthly_avg, y = daily_max_count, color = common_name)) +
+  geom_point(alpha = 0.5) +
+  scale_y_log10() +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "SST vs Count - Monterey", x = "SST (°C)", y = "Count (log scale)") +
+  theme_minimal()
+```
+
+6) Check seasonality of SST temps
+
+```{r}
+bird_sst %>%
+  filter(county == "Monterey", !is.na(sst_monthly_avg)) %>%
+  mutate(month_label = factor(month.abb[month], levels = month.abb)) %>%
+  ggplot(aes(x = sst_monthly_avg, y = daily_max_count, color = month_label)) +
+  geom_point(alpha = 0.6, size = 2) +
+  scale_y_log10() +
+  scale_color_viridis_d(option = "turbo") +
+  labs(title = "SST vs Count colored by Month - Monterey",
+       x = "SST (°C)", y = "Count (log scale)", color = "Month") +
+  theme_minimal()
+```
+
+Preliminary from the graphs:
+
+- PFSH have a more northerly distribution tendency than SOSH, with more PFSH
+  appearing in Sonoma county than SOSH.
+- Shearwater counts are increasing with sst, however this is shown to be due to
+  their seasonal arrival in spring and summer, so higher SST does not 
+  necessarily drive higher counts.
+
