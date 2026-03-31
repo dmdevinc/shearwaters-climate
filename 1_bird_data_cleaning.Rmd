@@ -29,9 +29,8 @@ license.
 # packages
 library(readr) # read data
 library(janitor) # standardize column names
-library(tidyverse) # data manipulation
+library(tidyverse) # data manipulation, includes ggplot2
 library(lubridate) # date handling
-library(ggplot2) # plotting
 library(sf) # mapping
   library(rnaturalearth) # base maps
 ```

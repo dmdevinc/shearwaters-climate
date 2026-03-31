@@ -16,8 +16,7 @@ output:
 ```{r}
 # packages
 library(readxl) # read in xl files
-library(ggplot2) # plotting
-library(tidyverse) # data manipulation
+library(tidyverse) # data manipulation, includes ggplot2
 library(lubridate) # date handling
 
 # read in cleaned data

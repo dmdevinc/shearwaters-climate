@@ -3,22 +3,24 @@
 #
 
 # === Packages ===
-library(shiny)          # core Shiny framework
+library(shiny)          # Shiny framework
 library(shinydashboard) # dashboard layout (header, sidebar, body)
-library(tidyverse)      # data manipulation (dplyr, ggplot2, etc.)
+library(tidyverse)      # data manipulation, includes ggplot2
 library(readxl)         # read Excel files
 library(plotly)         # interactive plots
 library(scales)         # axis formatting (commas, percentages, etc.)
 
-# === Links ===
-# https://rstudio.github.io/shinydashboard/appearance.html#icons
+# === Rescources ===
+# Appearance: https://rstudio.github.io/shinydashboard/appearance.html#icons
 
 # === Load Data ===
-library(here) # anchors file paths to project root, not the app subfolder
+library(here) # anchors file paths to project root instead of app subfolder
 data <- readxl::read_excel(here("data", "bird_sst.xlsx"))
 data <- data %>%
-  mutate(across(where(is.character), as.factor)) %>% # convert all character columns to factors for filtering/leveling
-  mutate(daily_max_count = as.numeric(daily_max_count)) # ensure count column is numeric
+  mutate(across(where(is.character), as.factor)) %>% 
+  # convert all char columns to factors for filtering/leveling
+  mutate(daily_max_count = as.numeric(daily_max_count)) 
+  # ensure count column is numeric
 
 # === ENSO Phases ===
 # Manually define El Niño/La Niña/Neutral periods for background shading
@@ -37,9 +39,8 @@ enso_phases <- data.frame(
 
 # === Define Sidebar Checkbox Options ===
 species_choices <- levels(data$common_name)
-county_choices  <- levels(data$county)
 
-# === Custom CSS for "Other" Checkbox Options ===
+# === Custom CSS for "Other" Checkbox Spacing ===
 tags$head(
   tags$style(HTML("
     /* container spacing */
@@ -51,7 +52,7 @@ tags$head(
 
 # === UI ===
 ui <- dashboardPage(
-  skin = "blue",
+  skin = "blue", 
   
   dashboardHeader(
     title = "Shearwater Watch",
@@ -74,20 +75,13 @@ ui <- dashboardPage(
       choices  = species_choices,
       selected = species_choices # all selected by default
     ),
-    # county filter — checkboxes
-    checkboxGroupInput(
-      inputId  = "county_filter",
-      label    = "County",
-      choices  = county_choices,
-      selected = county_choices # all selected by default
-    ),
-    # toggle log scale and ENSO, I created custom heading with css
+    # create custom "Other" heading with css
     tags$div(
       tags$strong(
         style = "margin-left: 14px; display: block; margin-bottom: -14px;", 
         "Other"
       ),
-      
+      # toggle log scale and ENSO with custom css formatting (from above ui)
       tags$div(class = "tight-checkbox",
                checkboxInput("log_scale", "Log Scale (counts)", TRUE),
                checkboxInput("show_enso", "Show ENSO Phases", TRUE)
@@ -105,34 +99,73 @@ ui <- dashboardPage(
         tabName = "tab_overview",
         fluidRow(
           box(
-            title = "Central California Shearwater Watch",
+            title = "Monterey Bay Shearwater Watch",
             width = 12,
             status = "primary",
             solidHeader = TRUE,
             
             h4("About This Project"),
-            p("Shearwaters are..."),
-            
+            p("One of the joys of spending summers in Santa Cruz, CA, is 
+              witnessing the thick rafts of floating shearwaters on the ocean as
+              they migrate north from southern breeding grounds. While living in
+              the area, I observed this seasonal occurrence for many years and 
+              was inspired to create a Shiny Dashboard to investigate it further
+              ."),
+            br(),
+            p("In this project, I aimed to evaluate, 
+              1) How many birds are counted each year in Monterey County? 
+              2) When do these birds arrive, and does this change year to year? 
+            3) Do I observe any effect of sea surface temperature (SST) on 
+              arrival timing in recent years?"),
+            br(),
+            h4("Shearwaters"),
+            p("Shearwaters have one of the longest migrations in the animal 
+            kingdom, moving northward after breeding in the southern hemisphere 
+            to western North America and Europe. For this project, I focused on 
+            Sooty Shearwaters (SOSH), one of the most common seabirds in the 
+            world, and the Pink-footed Shearwater (PFSH), a less common species 
+            that has been listed as vulnerable by the IUCN and endangered by 
+            Chile and Canada. Both of these species are threatened by fisheries 
+            where they are caught as incidental bycatch, and face pressure from 
+            both habitat degradation and predators at island breeding colonies. 
+            More information about the life history of these species can be 
+            found at Birds of the World online (",
+              a("Pink-footed Shearwater",
+                href = 
+                  "https://birdsoftheworld.org/bow/species/pifshe/cur/introduction?login", 
+                target = "_blank"),
+              ", ",
+              a("Sooty Shearwater",
+                href = 
+                  "https://birdsoftheworld.org/bow/species/sooshe/cur/introduction?login", 
+                target = "_blank"),
+              ")"
+            ),
             br(),
             h4("Data Sources"),
-            p("Bird observation data were sourced from ",
+            p("Shearwater observation data from January 1, 2015, to December 31,
+              2025, in Monterey County were sourced from ",
               a("eBird (Cornell Lab of Ornithology, Ithaca, New York, version 2025)", 
                 href = "  https://ebird.org/data/download", target = "_blank"),
-              ", a community science platform hosting millions of bird observations 
-        submitted by volunteers worldwide. SST data were obtained from ",
+              ", a community science platform hosting millions of bird 
+              observations worldwide. SST data were obtained from ",
               a("NOAA 0.25-degree Daily Optimum Interpolation Sea Surface Temperature (OISST, Version 2.1)", 
                 href = " https://doi.org/10.25921/RE9P-PT57", target = "_blank"),
-              ", and represent gridded weekly sea surface 
-        temperature for the California coast."),
+              ", and represents gridded weekly sea surface temperature for 
+              Monterey Bay from February 2, 2020, to December 12, 2025."),
             
             br(),
             h4("Methods"),
-            p("The single highest count was retained as the daily maximum for 
-            bird observations where multiple observers recorded the same species 
-            on the same date and county, to avoid double counting. Weekly SST 
-            values were aggregated to monthly averages for visualization and 
-            correlation analysis. ENSO phase annotations follow the Oceanic Niño 
-              Index (ONI) classifications from ",
+            p("For the eBird dataset, I focused on traveling, stationary, and 
+              pelagic observations. eBird checklists are sometimes recorded in 
+              groups; to reduce the possibility of double-counting birds, I kept
+              the first record for each group only. The single highest count per
+              day was retained as the daily maximum for bird observations where 
+              multiple observers recorded the same species on the same date and 
+              county, to avoid double-counting. Weekly SST values were 
+              aggregated to monthly averages for visualization and correlation 
+              analysis. ENSO phase annotations follow the Oceanic Niño Index 
+              (ONI) classifications from ",
               a("NOAA / Golden Gate Weather Services.", 
                 href = "https://ggweather.com/enso/", target = "_blank")),
             
@@ -147,17 +180,19 @@ ui <- dashboardPage(
             
             br(),
             h4("About"),
-            p("Built by Danielle Devincenzi using R and Shiny. Data processing, aggregation, and visualization 
-        code available on ",
-              a("GitHub.", href = "https://github.com/dmdevinc", target = "_blank"),
+            p("Built by Danielle Devincenzi using R and Shiny. Data processing, 
+            aggregation, and visualization code available on ",
+              a("GitHub.", href = "https://github.com/dmdevinc", 
+                target = "_blank"),
               " For questions or collaborations please reach out via ",
-              a("LinkedIn.", href = "http://www.linkedin.com/in/danielle-devincenzi", target = "_blank"))
+              a("LinkedIn.", href = "http://www.linkedin.com/in/danielle-devincenzi", 
+                target = "_blank"))
           )
         )
       ),
       
       # === Tab: Abundance & Trends ===
-      # Time series of daily max counts across all counties and species
+      # Time series of daily max counts — Monterey County, selected species
       tabItem(
         tabName = "tab_trends",
         fluidRow(
@@ -169,11 +204,12 @@ ui <- dashboardPage(
         ),
         fluidRow(
           box(
-            title = "About This Chart",
+            title = "Note",
             width = 12, status = "primary", solidHeader = FALSE,
-            p("Each point represents the highest single observer count recorded on a given day.
-               Multiple observer records for the same date and location are collapsed to the
-               daily maximum to avoid double-counting of the same birds.")
+            p("Multiple observer records for the same date and location are 
+            collapsed to the daily maximum to avoid double-counting the same 
+            birds, therefore each point represents the highest single count 
+            recorded on a given day.")
           )
         )
       ),
@@ -204,8 +240,8 @@ ui <- dashboardPage(
         )
       ),
       
-      # === Tab1 : Seasonal Patterns ===
-      # bubble plot showing monthly max counts by year, faceted by county
+      # === Tab: Seasonal Patterns ===
+      # bubble plot showing monthly max counts by year
       tabItem(
         tabName = "tab_seasonal",
         fluidRow(
@@ -224,13 +260,13 @@ ui <- dashboardPage(
 server <- function(input, output, session) {
   
   # === Reactive: filtered_data ===
-  # filters full dataset by species and county sidebar inputs
+  # filters full dataset by species sidebar input, Monterey County only
   # used by plot_trends and plot_seasonal
   filtered_data <- reactive({
     data %>%
       filter(
         common_name %in% input$species_filter,
-        county      %in% input$county_filter
+        as.character(county) == "Monterey"
       )
   })
   
@@ -250,12 +286,11 @@ server <- function(input, output, session) {
   # scatter plot of daily max counts over time, colored by species
   output$plot_trends <- renderPlotly({
     
-    df <- filtered_data() %>%
-      filter(county %in% c("Monterey", "Sonoma"))
+    df <- filtered_data()
     
     # aggregate to monthly max to reduce noise
     df_monthly <- df %>%
-      group_by(month_date = floor_date(date, "month"), county, common_name) %>%
+      group_by(month_date = floor_date(date, "month"), common_name) %>%
       summarise(monthly_max = max(daily_max_count, na.rm = TRUE), .groups = "drop")
     
     y_min <- if (input$log_scale) 0.1 else 0
@@ -276,7 +311,6 @@ server <- function(input, output, session) {
                      color = common_name,
                      text = paste0("Month: ", format(month_date, "%b %Y"),
                                    "<br>Species: ", common_name,
-                                   "<br>County: ", county,
                                    "<br>Monthly Max: ", scales::comma(monthly_max))),
                  alpha = 0.3, size = 1.2) +
       # smoothed trend line per species
@@ -285,8 +319,6 @@ server <- function(input, output, session) {
                       color = common_name),
                   method = "loess", span = 0.3,
                   se = TRUE, alpha = 0.15, linewidth = 1) +
-      # facet Monterey and Sonoma side by side
-      facet_wrap(~ county, ncol = 2) +
       scale_fill_manual(
         values = c("El Niño" = "tomato", "La Niña" = "steelblue", "Neutral" = "gray80"),
         name = " "
@@ -302,9 +334,7 @@ server <- function(input, output, session) {
       labs(x = "Date", y = "Monthly Max Count") +
       theme_minimal(base_size = 13) +
       theme(
-        legend.position = "bottom",
-        strip.text = element_text(size = 13, face = "bold"),
-        panel.spacing = unit(2, "lines")
+        legend.position = "bottom"
       )
     
     pl <- ggplotly(p, tooltip = "text") %>%
@@ -428,7 +458,7 @@ server <- function(input, output, session) {
         ),
         yaxis = list(
           title = "Daily Max Count",
-          nticks = 6  # adjust this number to whatever interval looks good
+          nticks = 6
         ),
         yaxis2 = list(
           title = "SST (°C)",
@@ -437,7 +467,7 @@ server <- function(input, output, session) {
           tickfont = list(color = "darkred"),
           titlefont = list(color = "darkred"),
           nticks = 6
-          ),
+        ),
         margin = list(r = 60),
         legend = list(
           orientation = "h",
@@ -486,13 +516,13 @@ server <- function(input, output, session) {
   
   # === Output: plot_seasonal ===
   # Bubble plot: month (x) vs year (y), bubble size = monthly max count
-  # Faceted by county, colored by species
+  # Colored by species, Monterey County only
   output$plot_seasonal <- renderPlotly({
     
     df <- filtered_data() %>%
       filter(!is.na(daily_max_count)) %>%
-      # Aggregate to monthly max per year/county/species combination
-      group_by(year, month, county, common_name) %>%
+      # Aggregate to monthly max per year/species combination
+      group_by(year, month, common_name) %>%
       summarise(monthly_max = max(daily_max_count, na.rm = TRUE),
                 .groups = "drop") %>%
       # Convert numeric month to ordered abbreviation factor for correct x-axis order
@@ -504,7 +534,6 @@ server <- function(input, output, session) {
                         text  = paste0("Year: ", year,
                                        "<br>Month: ", month_label,
                                        "<br>Species: ", common_name,
-                                       "<br>County: ", county,
                                        "<br>Max Count: ", scales::comma(monthly_max)))) +
       geom_point(alpha = 0.7) +
       scale_size_continuous(
@@ -517,7 +546,6 @@ server <- function(input, output, session) {
                    "Pink-footed Shearwater" = "#B5485A"),
         name = " "
       ) +
-      facet_wrap(~county) +
       labs(x = "Month", y = "Year") +
       theme_minimal(base_size = 13) +
       theme(panel.grid.major = element_line(color = "gray90"),
