@@ -9,6 +9,9 @@ library(tidyverse)      # data manipulation, includes ggplot2
 library(readxl)         # read Excel files
 library(plotly)         # interactive plots
 library(scales)         # axis formatting (commas, percentages, etc.)
+library(sf)             # mapping
+library(rnaturalearth)  # base maps
+library(ggspatial)      # north arrow
 
 # === Rescources ===
 # Appearance: https://rstudio.github.io/shinydashboard/appearance.html#icons
@@ -21,6 +24,10 @@ data <- data %>%
   # convert all char columns to factors for filtering/leveling
   mutate(daily_max_count = as.numeric(daily_max_count)) 
   # ensure count column is numeric
+
+# read in separate data for mapping
+bird_df <- readxl::read_excel(here("data", "clean_bird.xlsx"))
+sst_df <- readxl::read_excel(here("data", "clean_sst.xlsx"))
 
 # === ENSO Phases ===
 # Manually define El Niño/La Niña/Neutral periods for background shading
@@ -65,7 +72,8 @@ ui <- dashboardPage(
       menuItem("Overview",          tabName = "tab_overview", icon = icon("home")),
       menuItem("Abundance & Trends",tabName = "tab_trends",   icon = icon("chart-line")),
       menuItem("SST & Shearwaters", tabName = "tab_sst",      icon = icon("water")),
-      menuItem("Seasonal Patterns", tabName = "tab_seasonal", icon = icon("calendar"))
+      menuItem("Seasonal Patterns", tabName = "tab_seasonal", icon = icon("calendar")),
+      menuItem("Study Area Map", tabName = "tab_map", icon = icon("map"))
     ),
     hr(), # line
     # species filter — checkboxes
@@ -143,8 +151,8 @@ ui <- dashboardPage(
             ),
             br(),
             h4("Data Sources"),
-            p("Shearwater observation data from January 1, 2015, to December 31,
-              2025, in Monterey County were sourced from ",
+            p("Shearwater observation data between 2015 and 2025, in Monterey 
+              County were sourced from ",
               a("eBird (Cornell Lab of Ornithology, Ithaca, New York, version 2025)", 
                 href = "  https://ebird.org/data/download", target = "_blank"),
               ", a community science platform hosting millions of bird 
@@ -152,7 +160,7 @@ ui <- dashboardPage(
               a("NOAA 0.25-degree Daily Optimum Interpolation Sea Surface Temperature (OISST, Version 2.1)", 
                 href = " https://doi.org/10.25921/RE9P-PT57", target = "_blank"),
               ", and represents gridded weekly sea surface temperature for 
-              Monterey Bay from February 2, 2020, to December 12, 2025."),
+              Monterey Bay from 2020 to 2025."),
             
             br(),
             h4("Methods"),
@@ -162,9 +170,10 @@ ui <- dashboardPage(
               the first record for each group only. The single highest count per
               day was retained as the daily maximum for bird observations where 
               multiple observers recorded the same species on the same date and 
-              county, to avoid double-counting. Weekly SST values were 
+              county, to avoid double-counting. Weekly SST anomallies (SSTA) were 
               aggregated to monthly averages for visualization and correlation 
-              analysis. ENSO phase annotations follow the Oceanic Niño Index 
+              analysis. I chose to look at SSTA since Shearwaters have a strong 
+              seasonal cycle. ENSO phase annotations follow the Oceanic Niño Index 
               (ONI) classifications from ",
               a("NOAA / Golden Gate Weather Services.", 
                 href = "https://ggweather.com/enso/", target = "_blank")),
@@ -251,10 +260,23 @@ ui <- dashboardPage(
             plotlyOutput("plot_seasonal", height = "500px")
           )
         )
+      ),
+      
+      tabItem(
+        tabName = "tab_map",
+        fluidRow(
+          box(
+            title = "Study Area — Shearwater Sightings & SST Record Locations",
+            width = 12, status = "primary", solidHeader = TRUE,
+            plotOutput("plot_map", height = "600px")
+          )
+        )
       )
+      
     )
   )
 )
+
 
 # === Server ===
 server <- function(input, output, session) {
@@ -374,40 +396,40 @@ server <- function(input, output, session) {
     
     df <- monterey_data()
     
-    sst_line <- df %>%
-      filter(!is.na(sst_monthly_avg)) %>%
-      distinct(month_date, sst_monthly_avg, sd_sst)
+    anom_line <- df %>%
+      filter(!is.na(anom_monthly_avg)) %>%
+      distinct(month_date, anom_monthly_avg, sd_anom)
     
     pl <- plot_ly() %>%
       
-      # SST ribbon (± 1 SD) on right axis (y2)
+      # anom ribbon (± 1 SD) on right axis (y2)
       add_trace(
-        data = sst_line,
+        data = anom_line,
         x = ~month_date,
-        y = ~sst_monthly_avg + sd_sst,
+        y = ~anom_monthly_avg + sd_anom,
         type = "scatter", mode = "lines",
         line = list(color = "transparent"),
         showlegend = FALSE, yaxis = "y2", hoverinfo = "skip"
       ) %>%
       add_trace(
-        data = sst_line,
+        data = anom_line,
         x = ~month_date,
-        y = ~sst_monthly_avg - sd_sst,
+        y = ~anom_monthly_avg - sd_anom,
         type = "scatter", mode = "lines",
         fill = "tonexty", fillcolor = "rgba(139,0,0,0.15)",
         line = list(color = "transparent"),
         showlegend = FALSE, yaxis = "y2", hoverinfo = "skip"
       ) %>%
       
-      # SST mean line on right axis (y2)
+      # anom mean line on right axis (y2)
       add_trace(
-        data = sst_line,
+        data = anom_line,
         x = ~month_date,
-        y = ~sst_monthly_avg,
+        y = ~anom_monthly_avg,
         type = "scatter", mode = "lines",
         line = list(color = "darkred", width = 2),
-        name = "SST", yaxis = "y2",
-        hovertemplate = "SST: %{y:.2f}°C<extra></extra>"
+        name = "anom", yaxis = "y2",
+        hovertemplate = "anom: %{y:.2f}°C<extra></extra>"
       ) %>%
       
       # Bird count points — one trace per species
@@ -450,8 +472,8 @@ server <- function(input, output, session) {
       layout(
         xaxis = list(
           title = "Date",
-          range = c(as.character(min(sst_line$month_date)), 
-                    as.character(max(sst_line$month_date))),
+          range = c(as.character(min(anom_line$month_date)), 
+                    as.character(max(anom_line$month_date))),
           dtick = "M12",
           tickformat = "%Y",
           ticklabelmode = "period"
@@ -461,7 +483,7 @@ server <- function(input, output, session) {
           nticks = 6
         ),
         yaxis2 = list(
-          title = "SST (°C)",
+          title = "anom (°C)",
           overlaying = "y",
           side = "right",
           tickfont = list(color = "darkred"),
@@ -583,12 +605,12 @@ server <- function(input, output, session) {
   output$table_correlation <- renderTable({
     
     monterey_data() %>%
-      filter(!is.na(sst_monthly_avg)) %>%
+      filter(!is.na(anom_monthly_avg)) %>%
       group_by(common_name) %>%
       summarise(
         N       = n(),
-        rho     = cor(sst_monthly_avg, daily_max_count, method = "spearman"),
-        p_value = cor.test(sst_monthly_avg, daily_max_count, method = "spearman")$p.value,
+        rho     = cor(anom_monthly_avg, daily_max_count, method = "spearman"),
+        p_value = cor.test(anom_monthly_avg, daily_max_count, method = "spearman")$p.value,
         .groups = "drop"
       ) %>%
       mutate(
@@ -608,8 +630,57 @@ server <- function(input, output, session) {
         `P-value` = p_value
       )
   }, striped = TRUE, hover = TRUE, bordered = TRUE)
+
+# === Output: map ===
+output$plot_map <- renderPlot({
   
-}
+  noaa_m_sf <- sst_df %>%
+    st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
+  bird_sf <- bird_df %>%
+    st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
+  
+  world <- ne_countries(scale = "medium", returnclass = "sf")
+  cities <- ne_download(scale = "large", type = "populated_places", returnclass = "sf")
+  
+  # filter to just the cities you want in your bounding box
+  cities_sub <- cities %>%
+    filter(NAME %in% c("Monterey", "Santa Cruz"))
+  
+  ggplot() +
+    geom_sf(data = world, fill = "gray96", color = "darkgrey") +
+    geom_sf(data = bird_sf, aes(color = "Shearwater Sightings"), size = 2) +
+    geom_sf(data = noaa_m_sf, aes(color = "SST Record Locations"), size = 2.5) +
+    geom_sf_text(data = cities_sub, aes(label = NAME), size = 4, nudge_y = 0.05, color = "gray20") +
+    scale_color_manual(
+      name = "Data Source",
+      values = c(
+        "Shearwater Sightings" = "#87CEEB",
+        "SST Record Locations" = "black")
+    ) +
+    coord_sf(xlim = c(-123.9, -120.5), ylim = c(35.2, 37.1)) +
+    theme_minimal() +
+    annotation_north_arrow(
+      location = "tr", which_north = "true",
+      style = north_arrow_orienteering(line_col = "black", fill = c("black", "black")),
+                  height = unit(1.5, "cm"), width = unit(1.3, "cm")
+    ) +
+    annotation_scale(
+      location = "br", width_hint = 0.4,
+      bar_cols = c("black", "white"), text_cex = 0.75
+    ) +
+    theme(
+      axis.text = element_text(size = 14, color = "darkgray"),
+      legend.title = element_blank(),
+      legend.position = c(0.999, 0.08),
+      legend.justification = c(1, 0),
+      legend.box.background = element_rect(
+        fill = "white", color = "black", linewidth = 1),
+      legend.text = element_text(size = 14),
+      panel.background = element_rect(fill = "aliceblue", color = NA)
+    )
+})
+
+} # close
 
 # === Run ===
 shinyApp(ui = ui, server = server)
