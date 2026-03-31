@@ -226,34 +226,6 @@ ggplot() +
 ```{r}
 # Counts -- graph and identify outliers
 
-# plot
-ggplot(bird_master, aes(x = observation_count)) +
-  geom_histogram(bins = 50) +
-  scale_x_log10() # use log if counts span several orders of magnitude
-
-# Add a log-transformed count first to compress values so skew matters less
-bird_master <- bird_master %>%
-  mutate(log_count = log10(observation_count + 1))  # +1 to handle zeros
-
-# Compute robust IQR on log-transformed counts
-Q1 <- quantile(bird_master$log_count, 0.25, na.rm = TRUE)
-Q3 <- quantile(bird_master$log_count, 0.75, na.rm = TRUE)
-IQR_val <- Q3 - Q1
-
-lower_bound <- Q1 - 1.5 * IQR_val
-upper_bound <- Q3 + 1.5 * IQR_val
-
-# Flag outliers
-outliers <- bird_master %>%
-  filter(log_count < lower_bound | log_count > upper_bound)
-
-# Quick check
-nrow(outliers)
-
-# ---
-
-# The graph shows some particularly high counts, lets check
-
 # flag all unusually high counts, e.g., over 100,000
 extreme_counts <- bird_master %>%
   filter(observation_count > 200000) %>%
@@ -265,7 +237,7 @@ extreme_counts
 # check group names
 unique(extreme_counts$group_identifier)
 
-# only three groups make up these counts, lets remove them
+# only three groups make up these counts, noted, but leave for now
 ```
 
 # Changes to Data Based on Integrity Analyses
@@ -279,22 +251,14 @@ bird_clean <- bird_master %>%
   rename(date = last_edited_date) %>%
   filter(date >= as.Date("2015-01-01") & 
          date <= as.Date("2024-12-31")) %>%
-  
-  # 2) counts - identify outliers, remove NAs, cap high counts
-  mutate(is_outlier = log_count < lower_bound | log_count > upper_bound) %>%
-  # Filter rows
-  filter(
-    !is.na(observation_count),
-    observation_count <= 10000 | is.na(observation_count)  # cap high counts
-  ) %>%
 
-  # 3) observation type - remove unwanted types
+  # 2) observation type - remove unwanted types
   filter(observation_type %in% c("Stationary", "Traveling", "eBird Pelagic Protocol")) %>%
   
-  # 4) effort - remove NAs (remember, shorter distance/duration = less confidence)
+  # 3) effort - remove NAs (remember, shorter distance/duration = less confidence)
   filter(!is.na(duration_minutes), !is.na(effort_distance_km)) %>%
   
-  # 5) groups - remove duplicates
+  # 4) groups - remove duplicates
   distinct(group_identifier, .keep_all = TRUE)
 
 # Check resulting date range
@@ -303,7 +267,7 @@ head(bird_clean)
 
 # save the data as an Excel file
 library(writexl)
-write_xlsx(bird_clean, "bird_clean.xlsx")
+write_xlsx(bird_clean, "data/clean_bird.xlsx")
 ```
 
 

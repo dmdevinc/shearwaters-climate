@@ -84,7 +84,8 @@ bird_sst # check
 
 # save the data as an Excel file
 library(writexl)
-write_xlsx(sst_clean, "data/bird_sst.xlsx")
+write_xlsx(bird_sst, "data/bird_sst.xlsx")
+write_xlsx(bird_sst, "shearwater_Shiny/bird_sst.xlsx")
 ```
 
 # Preliminary Plots

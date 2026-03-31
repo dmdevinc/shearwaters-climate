@@ -194,5 +194,5 @@ head(sst_clean)
 
 # save the data as an Excel file
 library(writexl)
-write_xlsx(sst_clean, "sst_clean.xlsx")
+write_xlsx(sst_clean, "data/clean_sst.xlsx")
 ```

@@ -25,8 +25,8 @@ library(sf) # mapping
   library(ggspatial) # north arrow
 
 # read in cleaned data
-bird_df <- read_excel("bird_clean.xlsx")
-sst_df <- read_excel("sst_clean.xlsx")
+bird_df <- read_excel("data/clean_bird.xlsx")
+sst_df <- read_excel("data/clean_sst.xlsx")
 ```
 
 # Visualize SST
