@@ -33,29 +33,19 @@ sst_df <- readxl::read_excel(here("data", "clean_sst.xlsx"))
 # Manually define El Niño/La Niña/Neutral periods for background shading
 # Source: https://ggweather.com/enso/
 enso_phases <- data.frame(
-  start = as.Date(c("2015-01-20", "2015-06-01", "2017-01-01", "2018-01-01",
+  start = as.Date(c("2015-06-01", "2017-01-01", "2018-01-01",
                     "2018-05-01", "2020-09-01", "2023-04-01", "2023-10-01",
                     "2024-06-01")),
-  end   = as.Date(c("2015-05-31", "2016-12-31", "2017-12-31", "2018-04-30",
+  end   = as.Date(c("2016-12-31", "2017-12-31", "2018-04-30",
                     "2020-08-31", "2023-03-31", "2023-09-30", "2024-05-31",
                     "2024-12-03")),
-  phase = c("Neutral", "El Niño", "Neutral", "La Niña",
+  phase = c("El Niño", "Neutral", "La Niña",
             "Neutral", "La Niña", "Neutral", "El Niño",
             "La Niña")
 )
 
 # === Define Sidebar Checkbox Options ===
 species_choices <- levels(data$common_name)
-
-# === Custom CSS for "Other" Checkbox Spacing ===
-tags$head(
-  tags$style(HTML("
-    /* container spacing */
-    .tight-checkbox {
-      margin-top: -5px !important;  /* space between title and first checkbox */
-    }
-  "))
-)
 
 # === UI ===
 ui <- dashboardPage(
@@ -69,9 +59,10 @@ ui <- dashboardPage(
   dashboardSidebar(
     sidebarMenu(
       # nav tabs — each tabName must match a tabItem below in dashboardBody
+      id = "sidebar",
       menuItem("Overview",          tabName = "tab_overview", icon = icon("home")),
       menuItem("Abundance & Trends",tabName = "tab_trends",   icon = icon("chart-line")),
-      menuItem("SST & Shearwaters", tabName = "tab_sst",      icon = icon("water")),
+      menuItem("SSTA & Shearwaters", tabName = "tab_sst",      icon = icon("water")),
       menuItem("Seasonal Patterns", tabName = "tab_seasonal", icon = icon("calendar")),
       menuItem("Study Area Map", tabName = "tab_map", icon = icon("map"))
     ),
@@ -83,18 +74,17 @@ ui <- dashboardPage(
       choices  = species_choices,
       selected = species_choices # all selected by default
     ),
-    # create custom "Other" heading with css
-    tags$div(
-      tags$strong(
-        style = "margin-left: 14px; display: block; margin-bottom: -14px;", 
-        "Other"
-      ),
-      # toggle log scale and ENSO with custom css formatting (from above ui)
-      tags$div(class = "tight-checkbox",
-               checkboxInput("log_scale", "Log Scale (counts)", TRUE),
-               checkboxInput("show_enso", "Show ENSO Phases", TRUE)
-      )
+    # only on trends tab
+    conditionalPanel(
+      condition = "input.sidebar == 'tab_trends'",
+      checkboxInput("log_scale", "Log Scale (counts)", TRUE),
+      checkboxInput("show_enso", "Show ENSO Phases", TRUE)
     ),
+    # only on sst tab
+    conditionalPanel(
+      condition = "input.sidebar == 'tab_sst'",
+      checkboxInput("log_scale", "Log Scale (counts)", TRUE)
+      ),
     hr() # line
   ),
   
@@ -113,39 +103,38 @@ ui <- dashboardPage(
             solidHeader = TRUE,
             
             h4("About This Project"),
-            p("One of the joys of spending summers in Santa Cruz, CA, is 
-              witnessing the thick rafts of floating shearwaters on the ocean as
-              they migrate north from southern breeding grounds. While living in
-              the area, I observed this seasonal occurrence for many years and 
-              was inspired to create a Shiny Dashboard to investigate it further
-              ."),
+            p("One of the seasonal joys of the Monterey Bay Area is witnessing 
+              thick rafts of shearwaters on the ocean as they migrate northward 
+              from their southern breeding grounds. While living in the area, I 
+              observed this phenomena for many years and was inspired to create 
+              this Shiny Dashboard to investigate it."),
             br(),
-            p("In this project, I aimed to evaluate, 
-              1) How many birds are counted each year in Monterey County? 
-              2) When do these birds arrive, and does this change year to year? 
-            3) Do I observe any effect of sea surface temperature (SST) on 
-              arrival timing in recent years?"),
+            p("In this project, I aim to visualize and evaluate: 
+              1) trends in annual shearwater counts in Monterey County, 
+              2) when birds arrive and if this change year to year, 
+              3) if there is an observable effect of sea surface temperature 
+              anomalies (SSTA) on shearwater counts."),
             br(),
             h4("Shearwaters"),
             p("Shearwaters have one of the longest migrations in the animal 
-            kingdom, moving northward after breeding in the southern hemisphere 
-            to western North America and Europe. For this project, I focused on 
-            Sooty Shearwaters (SOSH), one of the most common seabirds in the 
-            world, and the Pink-footed Shearwater (PFSH), a less common species 
-            that has been listed as vulnerable by the IUCN and endangered by 
-            Chile and Canada. Both of these species are threatened by fisheries 
-            where they are caught as incidental bycatch, and face pressure from 
-            both habitat degradation and predators at island breeding colonies. 
+            kingdom, where they travel northward after breeding in the southern 
+            hemisphere to western North America and Europe. For this project, I 
+            focused on two species with similar life history strategies, the 
+            Sooty (SOSH) and Pink-Footed Shearwaters (PFSH). PFSH are one of the
+            most abundant seabirds in the world, while SOSH are listed as 
+            vunerable by the IUCN and endangered by Chile and Canada. Both of 
+            these species migrate through the Monterey Bay Area in spring and 
+            summer and face similar threats, including mortality from being
+            caught as fishery bycatch and pressure from habitat degradation and 
+            predators at their island breeding colonies.
             More information about the life history of these species can be 
             found at Birds of the World online (",
               a("Pink-footed Shearwater",
-                href = 
-                  "https://birdsoftheworld.org/bow/species/pifshe/cur/introduction?login", 
+                href = "https://birdsoftheworld.org/bow/species/pifshe/cur/introduction?login", 
                 target = "_blank"),
               ", ",
               a("Sooty Shearwater",
-                href = 
-                  "https://birdsoftheworld.org/bow/species/sooshe/cur/introduction?login", 
+                href = "https://birdsoftheworld.org/bow/species/sooshe/cur/introduction?login", 
                 target = "_blank"),
               ")"
             ),
@@ -164,27 +153,47 @@ ui <- dashboardPage(
             
             br(),
             h4("Methods"),
-            p("For the eBird dataset, I focused on traveling, stationary, and 
-              pelagic observations. eBird checklists are sometimes recorded in 
-              groups; to reduce the possibility of double-counting birds, I kept
-              the first record for each group only. The single highest count per
-              day was retained as the daily maximum for bird observations where 
-              multiple observers recorded the same species on the same date and 
-              county, to avoid double-counting. Weekly SST anomallies (SSTA) were 
-              aggregated to monthly averages for visualization and correlation 
-              analysis. I chose to look at SSTA since Shearwaters have a strong 
-              seasonal cycle. ENSO phase annotations follow the Oceanic Niño Index 
-              (ONI) classifications from ",
+            p("For the eBird observation dataset, I focused on traveling, 
+              stationary, or pelagic observations. I also removed duplicate 
+              records for the same group of observers, indicated by a group 
+              identification number, as it is likely these groups counted the 
+              same individual birds. To avoid double-counting birds, I also only
+              evaluated the daily maximum count on days where multiple observers
+              recorded the same species on the same day. Outliers were left in 
+              the data since shearwaters are known for forming massive rafts and
+              excluding this data could obscure these patterns. Weekly SST 
+              anomalies (SSTA) were aggregated to monthly averages for 
+              visualization and correlation analysis. Since shearwaters have a 
+              strong seasonal cycle, I chose to evaluate SSTA instead of SST. 
+              To contextualize variability in Shearwater counts, El 
+              Niño-Southern Oscillations (ENSO) phase annotations were created 
+              following the Oceanic Niño Index (ONI) classifications from ",
               a("NOAA / Golden Gate Weather Services.", 
                 href = "https://ggweather.com/enso/", target = "_blank")),
             
             br(),
             h4("Key Findings"),
             tags$ul(
-              tags$li("1"),
-              tags$li("2"),
-              tags$li("3"),
-              tags$li("4")
+              tags$li("SOSH peak in September-October and appear in higher 
+                      numbers than PFSH which tend to appear more March-April 
+                      and again in Fall."),
+              tags$li("SOSH counts are relatively stable across the record with 
+                      some interannual variability while PFSH show a spike in 
+                      2022 in a La Niña, though causality is difficult to 
+                      establish visually and the sample size is low."),
+              tags$li("Both SOSH and PFSH were found to be not significantly 
+                      associated with SSTA 
+                      (Spearman Correlation p < 0.3), which suggests that SSTA 
+                      alone does not predict shearwater counts in Monterey Bay, 
+                      at least at the monthly resolution."),
+              tags$li("Shearwater observations are spatially clustered around 
+                      the underwater canyons where upwelling occurs and there 
+                      are high prey concentrates which is expected, though these
+                      are areas that most pelagic tours target which could 
+                      add a bias"),
+              br(),
+              p("Overall, seasonality seems explains more of the variation 
+                ovserved in shearwater presence in Monterey Bay than SSTA.")
             ),
             
             br(),
@@ -218,7 +227,9 @@ ui <- dashboardPage(
             p("Multiple observer records for the same date and location are 
             collapsed to the daily maximum to avoid double-counting the same 
             birds, therefore each point represents the highest single count 
-            recorded on a given day.")
+            recorded on a given day. Counts are displayed on a log scale by 
+            default, since observations span several orders of magnitude 
+            (toggle off this option on the left to view raw counts).")
           )
         )
       ),
@@ -230,21 +241,24 @@ ui <- dashboardPage(
         tabName = "tab_sst",
         fluidRow(
           box(
-            title = "Sea Surface Temperature (SST) & Shearwater Counts — Monterey County",
+            title = "Sea Surface Temperature Anomalies (SSTA) & Shearwater Counts — Monterey County",
             width = 12, status = "primary", solidHeader = TRUE,
             plotlyOutput("plot_sst", height = "450px")
           )
         ),
         fluidRow(
           box(
-            title = "Spearman Correlation — SST vs. Count",
+            title = "Spearman Correlation — SSTA vs. Count",
             width = 6, status = "primary", solidHeader = TRUE,
             tableOutput("table_correlation")
           ),
           box(
             title = "Interpretation Note",
             width = 6, status = "primary", solidHeader = FALSE,
-            p("SST and shearwater counts ...")
+            p("Shearwater counts are similiarly spread across both warm and cool
+              anomalies with high counts appearing on either side of the zero 
+              line. This is consistent with the Spearman Correlation results 
+              showing no significant correlation between SSTA and counts.")
           )
         )
       ),
@@ -257,7 +271,7 @@ ui <- dashboardPage(
           box(
             title = "Seasonal Arrival Patterns by Month and Year",
             width = 12, status = "primary", solidHeader = TRUE,
-            plotlyOutput("plot_seasonal", height = "500px")
+            plotlyOutput("plot_seasonal", height = "450")
           )
         )
       ),
@@ -266,9 +280,9 @@ ui <- dashboardPage(
         tabName = "tab_map",
         fluidRow(
           box(
-            title = "Study Area — Shearwater Sightings & SST Record Locations",
+            title = "Study Area — Monterey County",
             width = 12, status = "primary", solidHeader = TRUE,
-            plotOutput("plot_map", height = "600px")
+            plotOutput("plot_map", height = "450")
           )
         )
       )
@@ -323,7 +337,7 @@ server <- function(input, output, session) {
       {if (input$show_enso)
         geom_rect(data = enso_phases,
                   aes(xmin = start, xmax = end,
-                      ymin = y_min, ymax = y_max,
+                      ymin = y_min, ymax = 1500,
                       fill = phase),
                   alpha = 0.15, inherit.aes = FALSE)
       } +
@@ -334,29 +348,29 @@ server <- function(input, output, session) {
                      text = paste0("Month: ", format(month_date, "%b %Y"),
                                    "<br>Species: ", common_name,
                                    "<br>Monthly Max: ", scales::comma(monthly_max))),
-                 alpha = 0.3, size = 1.2) +
+                 alpha = 0.7, size = 1.2) +
       # smoothed trend line per species
       geom_smooth(data = df_monthly,
                   aes(x = month_date, y = monthly_max,
                       color = common_name),
                   method = "loess", span = 0.3,
-                  se = TRUE, alpha = 0.15, linewidth = 1) +
+                  se = TRUE, alpha = 0.20, linewidth = 1) +
       scale_fill_manual(
-        values = c("El Niño" = "tomato", "La Niña" = "steelblue", "Neutral" = "gray80"),
-        name = " "
+        values = c("El Niño" = "#B5485A", "La Niña" = "#5B8DB8", "Neutral" = "gray80"),
+        name = ""
       ) +
       scale_color_manual(
         values = c("Sooty Shearwater"       = "#5C6B6B",
                    "Pink-footed Shearwater" = "#B5485A"),
         name = " "
       ) +
-      {if (input$log_scale) scale_y_log10(labels = scales::comma)
-        else scale_y_continuous(labels = scales::comma)
+      {if (input$log_scale) scale_y_log10(labels = scales::comma_format(accuracy = 1))
+        else scale_y_continuous(labels = scales::comma_format(accuracy = 1))
       } +
       labs(x = "Date", y = "Monthly Max Count") +
       theme_minimal(base_size = 13) +
       theme(
-        legend.position = "bottom"
+        legend.position = "top"
       )
     
     pl <- ggplotly(p, tooltip = "text") %>%
@@ -391,212 +405,54 @@ server <- function(input, output, session) {
   })
   
   # === Output: plot_sst ===
-  # dual-axis plot: bird counts (left) + SST line with ribbon (right)
   output$plot_sst <- renderPlotly({
     
-    df <- monterey_data()
+    df <- monterey_data() %>%
+      filter(!is.na(daily_max_count), !is.na(anom_monthly_avg)) %>%
+      group_by(date, anom_monthly_avg, common_name) %>%
+      summarise(total_count = sum(daily_max_count, na.rm = TRUE), .groups = "drop")
     
-    anom_line <- df %>%
-      filter(!is.na(anom_monthly_avg)) %>%
-      distinct(month_date, anom_monthly_avg, sd_anom)
+    # run spearman correlation
+    cor_result <- cor.test(df$anom_monthly_avg, df$total_count, method = "spearman")
+    cor_label <- paste0("Spearman ρ = ", round(cor_result$estimate, 2),
+                        ", p = ", round(cor_result$p.value, 3))
     
-    pl <- plot_ly() %>%
-      
-      # anom ribbon (± 1 SD) on right axis (y2)
-      add_trace(
-        data = anom_line,
-        x = ~month_date,
-        y = ~anom_monthly_avg + sd_anom,
-        type = "scatter", mode = "lines",
-        line = list(color = "transparent"),
-        showlegend = FALSE, yaxis = "y2", hoverinfo = "skip"
-      ) %>%
-      add_trace(
-        data = anom_line,
-        x = ~month_date,
-        y = ~anom_monthly_avg - sd_anom,
-        type = "scatter", mode = "lines",
-        fill = "tonexty", fillcolor = "rgba(139,0,0,0.15)",
-        line = list(color = "transparent"),
-        showlegend = FALSE, yaxis = "y2", hoverinfo = "skip"
-      ) %>%
-      
-      # anom mean line on right axis (y2)
-      add_trace(
-        data = anom_line,
-        x = ~month_date,
-        y = ~anom_monthly_avg,
-        type = "scatter", mode = "lines",
-        line = list(color = "darkred", width = 2),
-        name = "anom", yaxis = "y2",
-        hovertemplate = "anom: %{y:.2f}°C<extra></extra>"
-      ) %>%
-      
-      # Bird count points — one trace per species
-      add_trace(
-        data = df %>% filter(as.character(common_name) == "Sooty Shearwater"),
-        x = ~date, y = ~daily_max_count,
-        type = "scatter", mode = "markers",
-        marker = list(color = "#5C6B6B", opacity = 0.6, size = 5),
-        name = "Sooty Shearwater",
-        hovertemplate = paste("Date: %{x}<br>Species: Sooty Shearwater",
-                              "<br>Count: %{y:,}<extra></extra>")
-      ) %>%
-      add_trace(
-        data = df %>% filter(as.character(common_name) == "Pink-footed Shearwater"),
-        x = ~date, y = ~daily_max_count,
-        type = "scatter", mode = "markers",
-        marker = list(color = "#B5485A", opacity = 0.6, size = 5),
-        name = "Pink-footed Shearwater",
-        hovertemplate = paste("Date: %{x}<br>Species: Pink-footed Shearwater",
-                              "<br>Count: %{y:,}<extra></extra>")
-      ) %>%
-      
-      # dummy traces for ENSO legend entries
-      add_trace(
-        x = c(NA), y = c(NA), type = "scatter", mode = "markers",
-        marker = list(color = "rgba(255,99,71,0.5)", size = 12, symbol = "square"),
-        name = "El Niño", showlegend = TRUE
-      ) %>%
-      add_trace(
-        x = c(NA), y = c(NA), type = "scatter", mode = "markers",
-        marker = list(color = "rgba(70,130,180,0.5)", size = 12, symbol = "square"),
-        name = "La Niña", showlegend = TRUE
-      ) %>%
-      add_trace(
-        x = c(NA), y = c(NA), type = "scatter", mode = "markers",
-        marker = list(color = "rgba(200,200,200,0.5)", size = 12, symbol = "square"),
-        name = "Neutral", showlegend = TRUE
-      ) %>%
-      
-      layout(
-        xaxis = list(
-          title = "Date",
-          range = c(as.character(min(anom_line$month_date)), 
-                    as.character(max(anom_line$month_date))),
-          dtick = "M12",
-          tickformat = "%Y",
-          ticklabelmode = "period"
-        ),
-        yaxis = list(
-          title = "Daily Max Count",
-          nticks = 6
-        ),
-        yaxis2 = list(
-          title = "anom (°C)",
-          overlaying = "y",
-          side = "right",
-          tickfont = list(color = "darkred"),
-          titlefont = list(color = "darkred"),
-          nticks = 6
-        ),
-        margin = list(r = 60),
-        legend = list(
-          orientation = "h",
-          x = 0, y = -0.2,
-          font = list(size = 13)
-        ),
-        hovermode = "closest"
-      )
-    
-    # conditionally add ENSO bands as shapes
-    if (input$show_enso) {
-      enso_colors <- c("El Niño" = "rgba(255,99,71,0.15)", 
-                       "La Niña" = "rgba(70,130,180,0.15)", 
-                       "Neutral" = "rgba(200,200,200,0.15)")
-      
-      shapes <- lapply(1:nrow(enso_phases), function(i) {
-        list(
-          type = "rect",
-          xref = "x", yref = "paper",
-          x0 = enso_phases$start[i], x1 = enso_phases$end[i],
-          y0 = 0, y1 = 1,
-          fillcolor = enso_colors[enso_phases$phase[i]],
-          line = list(width = 0)
-        )
-      })
-      pl <- pl %>% layout(shapes = shapes)
-    }
-    
-    # remove toolbar clutter and plotly logo
-    pl <- pl %>%
-      config(
-        modeBarButtonsToRemove = c(
-          "lasso2d",
-          "select2d",
-          "zoomIn2d",
-          "zoomOut2d",
-          "autoScale2d",
-          "hoverCompareCartesian",
-          "hoverClosestCartesian"
-        ),
-        displaylogo = FALSE
-      )
-    
-    pl
-  })
-  
-  # === Output: plot_seasonal ===
-  # Bubble plot: month (x) vs year (y), bubble size = monthly max count
-  # Colored by species, Monterey County only
-  output$plot_seasonal <- renderPlotly({
-    
-    df <- filtered_data() %>%
-      filter(!is.na(daily_max_count)) %>%
-      # Aggregate to monthly max per year/species combination
-      group_by(year, month, common_name) %>%
-      summarise(monthly_max = max(daily_max_count, na.rm = TRUE),
-                .groups = "drop") %>%
-      # Convert numeric month to ordered abbreviation factor for correct x-axis order
-      mutate(month_label = factor(month.abb[month], levels = month.abb))
-    
-    p <- ggplot(df, aes(x = month_label, y = factor(year),
-                        size  = monthly_max,
-                        color = common_name,
-                        text  = paste0("Year: ", year,
-                                       "<br>Month: ", month_label,
-                                       "<br>Species: ", common_name,
-                                       "<br>Max Count: ", scales::comma(monthly_max)))) +
-      geom_point(alpha = 0.7) +
-      scale_size_continuous(
-        name   = "Max Count",
-        range  = c(1, 12), # min and max bubble size in pts
-        labels = scales::comma
-      ) +
+    p <- ggplot(df, aes(x = anom_monthly_avg, y = total_count,
+                        text = paste0("Date: ", format(date, "%b %Y"),
+                                      "<br>SSTA: ", round(anom_monthly_avg, 2), "°C",
+                                      "<br>Total Count: ", scales::comma(total_count)))) +
+      geom_vline(xintercept = 0, linetype = "dashed", color = "gray60", linewidth = 0.5) +
+      geom_point(aes(x = anom_monthly_avg, y = total_count,
+                     color = common_name,
+                     text = paste0("Date: ", format(date, "%b %Y"),
+                                   "<br>SSTA: ", round(anom_monthly_avg, 2), "°C",
+                                   "<br>Total Count: ", scales::comma(total_count))),
+                 alpha = 0.6, size = 2.5) +
       scale_color_manual(
         values = c("Sooty Shearwater"       = "#5C6B6B",
                    "Pink-footed Shearwater" = "#B5485A"),
         name = " "
-      ) +
-      labs(x = "Month", y = "Year") +
+      ) +      geom_smooth(method = "lm", se = TRUE, color = "#B5485A", fill = "#B5485A", alpha = 0.15) +
+      annotate("text", x = Inf, y = Inf, label = cor_label,
+               hjust = 1.05, vjust = 1.5, size = 4, color = "gray30") +
+      {if (input$log_scale)
+        scale_y_log10(labels = scales::comma_format(accuracy = 1))
+        else
+          scale_y_continuous(labels = scales::comma_format(accuracy = 1))
+      } +
+      labs(x = "Sea Surface Temperature Anomaly (°C)",
+           y = "Total Count") +
       theme_minimal(base_size = 13) +
-      theme(panel.grid.major = element_line(color = "gray90"),
-            legend.position  = "bottom",
-            axis.text.x = element_text(angle = 40) # angled x labels to avoid overlap
+      theme(
+        legend.position = "top"
       )
     
-    # Convert to interactive plotly, select which tools to get rid of
-    pl <- ggplotly(p, tooltip = "text") %>%
+    ggplotly(p, tooltip = "text") %>%
       config(
-        modeBarButtonsToRemove = c(
-          "lasso2d",
-          "select2d",
-          "zoomIn2d",
-          "zoomOut2d",
-          "autoScale2d",
-          "hoverCompareCartesian",
-          "hoverClosestCartesian"
-        ),
+        modeBarButtonsToRemove = c("lasso2d", "select2d", "zoomIn2d",
+                                   "zoomOut2d", "autoScale2d"),
         displaylogo = FALSE
-      ) 
-    
-    # Clean up auto-generated legend labels from ggplotly
-    for (i in seq_along(pl$x$data)) {
-      pl$x$data[[i]]$name <- gsub("\\(|\\)|,1|,\\d+", "", pl$x$data[[i]]$name)
-      pl$x$data[[i]]$name <- trimws(pl$x$data[[i]]$name)
-    }
-    
-    pl
+      )
   })
   
   # === Output: table_correlation ===
@@ -630,35 +486,106 @@ server <- function(input, output, session) {
         `P-value` = p_value
       )
   }, striped = TRUE, hover = TRUE, bordered = TRUE)
+  
+  # === Output: plot_seasonal ===
+  # Bubble plot: month (x) vs year (y), bubble size = monthly max count
+  # Colored by species, Monterey County only
+  output$plot_seasonal <- renderPlotly({
+    
+    df <- filtered_data() %>%
+      filter(!is.na(daily_max_count)) %>%
+      # Aggregate to monthly max per year/species combination
+      group_by(year, month, common_name) %>%
+      summarise(monthly_max = max(daily_max_count, na.rm = TRUE),
+                .groups = "drop") %>%
+      # Convert numeric month to ordered abbreviation factor for correct x-axis order
+      mutate(month_label = factor(month.abb[month], levels = month.abb))
+    
+    p <- ggplot(df, aes(x = month_label, y = factor(year),
+                        size  = monthly_max,
+                        color = common_name,
+                        text  = paste0("Year: ", year,
+                                       "<br>Month: ", month_label,
+                                       "<br>Species: ", common_name,
+                                       "<br>Max Count: ", scales::comma(monthly_max)))) +
+      geom_point(alpha = 0.7) +
+      scale_y_discrete(expand = expansion(add = c(1, 1))) +
+      scale_size_continuous(
+        name   = "Max Count",
+        range  = c(1, 12), # min and max bubble size in pts
+        labels = scales::comma
+      ) +
+      scale_color_manual(
+        values = c("Sooty Shearwater"       = "#5C6B6B",
+                   "Pink-footed Shearwater" = "#B5485A"),
+        name = " "
+      ) +
+      labs(x = "Month", y = "Year") +
+      theme_minimal(base_size = 13) +
+      theme(panel.grid.major = element_line(color = "gray90"),
+            legend.position  = "top",
+            axis.text.x = element_text(angle = 40) # angled x labels to avoid overlap
+      )
+    
+    # Convert to interactive plotly, select which tools to get rid of
+    pl <- ggplotly(p, tooltip = "text") %>%
+      config(
+        modeBarButtonsToRemove = c(
+          "lasso2d",
+          "select2d",
+          "zoomIn2d",
+          "zoomOut2d",
+          "autoScale2d",
+          "hoverCompareCartesian",
+          "hoverClosestCartesian"
+        ),
+        displaylogo = FALSE
+      ) 
+    
+    # Clean up auto-generated legend labels from ggplotly
+    for (i in seq_along(pl$x$data)) {
+      pl$x$data[[i]]$name <- gsub("\\(|\\)|,1|,\\d+", "", pl$x$data[[i]]$name)
+      pl$x$data[[i]]$name <- trimws(pl$x$data[[i]]$name)
+    }
+    
+    pl
+  })
 
 # === Output: map ===
 output$plot_map <- renderPlot({
   
+  # set crs and species toggle option (since seperate df from prior graphs)
   noaa_m_sf <- sst_df %>%
     st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
   bird_sf <- bird_df %>%
+    filter(common_name %in% input$species_filter) %>% # species toggle
     st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
   
-  world <- ne_countries(scale = "medium", returnclass = "sf")
+  land <- ne_download(scale = 10, type = "land", category = "physical", returnclass = "sf")
   cities <- ne_download(scale = "large", type = "populated_places", returnclass = "sf")
+  coast <- ne_download(scale = 10, type = "coastline", category = "physical", returnclass = "sf")
   
   # filter to just the cities you want in your bounding box
   cities_sub <- cities %>%
     filter(NAME %in% c("Monterey", "Santa Cruz"))
   
   ggplot() +
-    geom_sf(data = world, fill = "gray96", color = "darkgrey") +
-    geom_sf(data = bird_sf, aes(color = "Shearwater Sightings"), size = 2) +
-    geom_sf(data = noaa_m_sf, aes(color = "SST Record Locations"), size = 2.5) +
-    geom_sf_text(data = cities_sub, aes(label = NAME), size = 4, nudge_y = 0.05, color = "gray20") +
+   geom_sf(data = land, fill = "#F0EBD8") +
+    geom_sf(data = coast, color = "#D4C8A8", linewidth = 1.5) +
+    geom_sf(data = bird_sf, aes(color = common_name), size = 4, alpha = 0.5) +
+    geom_sf(data = noaa_m_sf, aes(color = "SST Record Locations"), 
+            size = 4, shape = 4, stroke = 1) +
+    geom_sf_text(data = cities_sub, aes(label = NAME), size = 5, 
+                 nudge_x = 0.28, nudge_y = 0.05, color = "gray20") +
     scale_color_manual(
       name = "Data Source",
       values = c(
-        "Shearwater Sightings" = "#87CEEB",
-        "SST Record Locations" = "black")
+        "Sooty Shearwater"       = "#5C6B6B",
+        "Pink-footed Shearwater" = "#B5485A",
+        "SST Record Locations"   = "#1B3A4B"
+      )
     ) +
     coord_sf(xlim = c(-123.9, -120.5), ylim = c(35.2, 37.1)) +
-    theme_minimal() +
     annotation_north_arrow(
       location = "tr", which_north = "true",
       style = north_arrow_orienteering(line_col = "black", fill = c("black", "black")),
@@ -668,8 +595,11 @@ output$plot_map <- renderPlot({
       location = "br", width_hint = 0.4,
       bar_cols = c("black", "white"), text_cex = 0.75
     ) +
+    theme_minimal(base_size = 13) +
     theme(
+      panel.grid.major = element_line(color = "gray90"),
       axis.text = element_text(size = 14, color = "darkgray"),
+      axis.title = element_blank(),
       legend.title = element_blank(),
       legend.position = c(0.999, 0.08),
       legend.justification = c(1, 0),
