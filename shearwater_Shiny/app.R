@@ -17,15 +17,9 @@ library(ggspatial)      # north arrow
 # Appearance: https://rstudio.github.io/shinydashboard/appearance.html#icons
 
 # === Load Data ===
-# library(here) # anchors file paths to project root instead of app subfolder
-# data <- readxl::read_excel(here("data", "bird_sst.xlsx"))
-# # read in separate data for mapping
-# bird_df <- readxl::read_excel(here("data", "clean_bird.xlsx"))
-# sst_df <- readxl::read_excel(here("data", "clean_sst.xlsx"))
-
 data <- readxl::read_excel("data/bird_sst.xlsx")
-bird_df <- readxl::read_excel("data/clean_bird.xlsx")
-sst_df <- readxl::read_excel("data/clean_sst.xlsx")
+bird_df <- readxl::read_excel("data/clean_bird.xlsx") # for map
+sst_df <- readxl::read_excel("data/clean_sst.xlsx") # for map
 
 data <- data %>%
   mutate(across(where(is.character), as.factor)) %>% 
@@ -119,10 +113,8 @@ ui <- dashboardPage(
             p("One of the seasonal joys in the Monterey Bay Area is witnessing 
               thick rafts of shearwaters on the ocean as they migrate northward 
               from their southern breeding grounds. While living in the area, I 
-              observed this phenomena for many years and was inspired to create 
-              this Shiny Dashboard to investigate it."),
-            br(),
-            p("In this project, I aim to visualize and evaluate: 
+              observed this phenomenon for many years and was inspired to create 
+              this Shiny Dashboard to investigate it. In this project, I aim to visualize and evaluate: 
               a) trends in annual shearwater counts in Monterey County, 
               b) when birds arrive and if this change year to year, 
               c) if there is an observable effect of sea surface temperature 
@@ -133,9 +125,9 @@ ui <- dashboardPage(
             kingdom, where they travel northward after breeding in the southern 
             hemisphere to western North America and Europe. For this project, I 
             focused on two species with similar life history strategies, the 
-            Sooty (SOSH) and Pink-Footed Shearwaters (PFSH). PFSH are one of the
+            Sooty (SOSH) and Pink-footed Shearwaters (PFSH). PFSH are one of the
             most abundant seabirds in the world, while SOSH are listed as 
-            vunerable by the IUCN and endangered by Chile and Canada. Both of 
+            vulnerable by the IUCN and endangered by Chile and Canada. Both of 
             these species migrate through the Monterey Bay Area in spring and 
             summer and face similar threats, including mortality from being
             caught as fishery bycatch and pressure from habitat degradation and 
@@ -185,28 +177,21 @@ ui <- dashboardPage(
             br(),
             h4("Key Findings"),
             tags$ul(
-              tags$li("SOSH peak in September-October and appear in higher 
-                      numbers than PFSH which tend to appear more March-April 
-                      and again in Fall."),
-              tags$li("SOSH counts are relatively stable across the record with 
-                      some interannual variability while PFSH show a spike in 
-                      2022 in a La Niña, though causality is difficult to 
-                      establish visually and the sample size is low."),
-              tags$li("Both SOSH and PFSH were found to be not significantly 
-                      associated with SSTA 
-                      (Spearman Correlation p < 0.3), which suggests that SSTA 
-                      alone does not predict shearwater counts in Monterey Bay, 
-                      at least at the monthly resolution."),
-              tags$li("Shearwater observations are spatially clustered around 
-                      the underwater canyons where upwelling occurs and there 
-                      are high prey concentrates which is expected, though these
-                      are areas that most pelagic tours target which could 
-                      add a bias"),
-              br(),
-              p("Overall, seasonality seems explains more of the variation 
-                ovserved in shearwater presence in Monterey Bay than SSTA.")
+              tags$li("SOSH peak in September-October while PFSH which tend to 
+                      appear more March-April with a second peak in Fall."),
+              tags$li("SOSH counts are relatively stable interannually, while 
+                      PFSH show a notable spike in 
+                      2022 during La Niña, though the sample size is small."),
+              tags$li("Neither species showed a significant associated with SSTA 
+                      (Spearman p < 0.3), suggesting that SSTA 
+                      alone does not predict monthly shearwater counts in 
+                      Monterey Bay. Overall, seasonality seems to explain more
+                      variation in shearwater presence than SSTA."),
+              tags$li("Observations spatially cluster around submarine canyons 
+                      where upwelling occurs and high prey concentrations are 
+                      expected, though pelagic tours routes in the area my introduce
+                      detection bias."),
             ),
-            
             br(),
             h4("About"),
             p("Built by Danielle Devincenzi using R and Shiny. Data processing, 
@@ -625,3 +610,5 @@ output$plot_map <- renderPlot({
 
 # === Run ===
 shinyApp(ui = ui, server = server)
+
+# published to Posit Connect Cloud because of issues with "units" package version and Shiny.io

@@ -11,7 +11,7 @@ output:
 
 # Introduction
 
-This script is in progress.
+Playing with visualizations for shearwater counts and sst data. 
 
 # Loading Workspace & Set Up
 
@@ -20,9 +20,6 @@ This script is in progress.
 library(readxl) # read in xl files
 library(ggplot2) # plotting
   library(patchwork) # to display plots side by side
-library(sf) # mapping
-  library(rnaturalearth) # base maps
-  library(ggspatial) # north arrow
 
 # read in cleaned data
 bird_df <- read_excel("data/clean_bird.xlsx")
@@ -167,66 +164,4 @@ ggplot(density, aes(x = day_of_year, fill = county, color = county)) +
   theme_minimal()
 ```
 
-# Visualize Shearwater Counts & SST
-
-```{r}
-# Investigate -- Lat/Long
-
-# Convert to sf
-noaa_m_sf <- sst_df %>%
-  st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
-
-bird_sf <- bird_df %>%
-  st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
-
-# World/US map background
-world <- ne_countries(scale = "medium", returnclass = "sf")
-
-# Plot from Bodega Bay to Monterey Bay
-ggplot() +
-  geom_sf(data = world, fill = "gray96", color = "gray80") + # optional green color: #DCEFD8
-  geom_sf(data = bird_sf, aes(color = "Shearwater Sightings"), size = 1) +
-  geom_sf(data = noaa_m_sf, aes(color = "SST Record Locations"), size = 1.5) +
-  scale_color_manual(
-    name = "Data Source",
-    values = c(
-      "Shearwater Sightings" = "lightblue",
-      "SST Record Locations" = "black"
-    )
-  ) +
-  coord_sf(xlim = c(-123.9, -120.5), ylim = c(34.8, 37.1)) +
-  theme_minimal() +
-  labs(
-    title = "Monterey County Shearwater Sightings and SST Recordings",
-    subtitle = "February 28, 2020 to December 31, 2025 (except EBird data...)"
-  ) +
-annotation_north_arrow(
-  location = "tr",
-  which_north = "true",
-  style = north_arrow_orienteering(
-    line_col = "black",
-    fill = c("black", "black")
-  ),
-  height = unit(1, "cm"),
-  width  = unit(1, "cm")
-) +
-  annotation_scale(
-    location = "br",    # bottom-left corner
-    width_hint = 0.2,   # relative size
-    bar_cols = c("black", "white"),
-    text_cex = 0.75
-  ) +
-  labs(caption = "Data source: NOAA and eBird, 2026") +
-  theme(plot.caption = element_text(hjust = 0, size = 10, color = "darkgray"),
-        axis.text = element_text(size = 11, color = "gray"),
-        legend.title = element_blank(),
-        legend.position = c(0.999, 0.08),
-        legend.justification = c(1, 0),
-        legend.box.background = element_rect(
-          fill = "white",
-          color = "black",
-          linewidth = 0.5),
-    panel.background = element_rect(fill = "aliceblue", color = NA))
-# I'll return to this graph to clean up the visuals, continuing to clean data below
-```
 
