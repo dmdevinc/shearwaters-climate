@@ -17,30 +17,43 @@ library(ggspatial)      # north arrow
 # Appearance: https://rstudio.github.io/shinydashboard/appearance.html#icons
 
 # === Load Data ===
-library(here) # anchors file paths to project root instead of app subfolder
-data <- readxl::read_excel(here("data", "bird_sst.xlsx"))
+# library(here) # anchors file paths to project root instead of app subfolder
+# data <- readxl::read_excel(here("data", "bird_sst.xlsx"))
+# # read in separate data for mapping
+# bird_df <- readxl::read_excel(here("data", "clean_bird.xlsx"))
+# sst_df <- readxl::read_excel(here("data", "clean_sst.xlsx"))
+
+data <- readxl::read_excel("data/bird_sst.xlsx")
+bird_df <- readxl::read_excel("data/clean_bird.xlsx")
+sst_df <- readxl::read_excel("data/clean_sst.xlsx")
+
 data <- data %>%
   mutate(across(where(is.character), as.factor)) %>% 
   # convert all char columns to factors for filtering/leveling
   mutate(daily_max_count = as.numeric(daily_max_count)) 
   # ensure count column is numeric
 
-# read in separate data for mapping
-bird_df <- readxl::read_excel(here("data", "clean_bird.xlsx"))
-sst_df <- readxl::read_excel(here("data", "clean_sst.xlsx"))
-
 # === ENSO Phases ===
 # Manually define El Niño/La Niña/Neutral periods for background shading
-# Source: https://ggweather.com/enso/
+# Source: https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso/roni/
 enso_phases <- data.frame(
-  start = as.Date(c("2015-06-01", "2017-01-01", "2018-01-01",
-                    "2018-05-01", "2020-09-01", "2023-04-01", "2023-10-01",
+  start = as.Date(c("2015-06-01", "2016-05-01",
+                    "2017-01-01", "2017-11-01",
+                    "2018-06-01", "2018-10-01",
+                    "2020-05-01", "2021-03-01",
+                    "2023-04-01", "2023-10-01",
                     "2024-06-01")),
-  end   = as.Date(c("2016-12-31", "2017-12-31", "2018-04-30",
-                    "2020-08-31", "2023-03-31", "2023-09-30", "2024-05-31",
-                    "2024-12-03")),
-  phase = c("El Niño", "Neutral", "La Niña",
-            "Neutral", "La Niña", "Neutral", "El Niño",
+  end   = as.Date(c("2016-04-30", "2016-12-31",
+                    "2017-10-31", "2018-05-31",
+                    "2018-09-30", "2020-04-30",
+                    "2021-02-28", "2023-03-31",
+                    "2023-09-30", "2024-05-31",
+                    "2024-12-31")),
+  phase = c("El Niño", "Neutral",
+            "La Niña", "Neutral",
+            "El Niño", "Neutral",
+            "La Niña", "La Niña",
+            "Neutral", "El Niño",
             "La Niña")
 )
 
@@ -103,16 +116,16 @@ ui <- dashboardPage(
             solidHeader = TRUE,
             
             h4("About This Project"),
-            p("One of the seasonal joys of the Monterey Bay Area is witnessing 
+            p("One of the seasonal joys in the Monterey Bay Area is witnessing 
               thick rafts of shearwaters on the ocean as they migrate northward 
               from their southern breeding grounds. While living in the area, I 
               observed this phenomena for many years and was inspired to create 
               this Shiny Dashboard to investigate it."),
             br(),
             p("In this project, I aim to visualize and evaluate: 
-              1) trends in annual shearwater counts in Monterey County, 
-              2) when birds arrive and if this change year to year, 
-              3) if there is an observable effect of sea surface temperature 
+              a) trends in annual shearwater counts in Monterey County, 
+              b) when birds arrive and if this change year to year, 
+              c) if there is an observable effect of sea surface temperature 
               anomalies (SSTA) on shearwater counts."),
             br(),
             h4("Shearwaters"),
@@ -128,24 +141,22 @@ ui <- dashboardPage(
             caught as fishery bycatch and pressure from habitat degradation and 
             predators at their island breeding colonies.
             More information about the life history of these species can be 
-            found at Birds of the World online (",
-              a("Pink-footed Shearwater",
+            found at Birds of the World online",
+              a("(Pink-footed Shearwater,",
                 href = "https://birdsoftheworld.org/bow/species/pifshe/cur/introduction?login", 
                 target = "_blank"),
-              ", ",
-              a("Sooty Shearwater",
+              a("Sooty Shearwater)",
                 href = "https://birdsoftheworld.org/bow/species/sooshe/cur/introduction?login", 
                 target = "_blank"),
-              ")"
             ),
             br(),
             h4("Data Sources"),
-            p("Shearwater observation data between 2015 and 2025, in Monterey 
-              County were sourced from ",
+            p("Shearwater observation data in Monterey County between 2015 and 
+               2025 were sourced from ",
               a("eBird (Cornell Lab of Ornithology, Ithaca, New York, version 2025)", 
                 href = "  https://ebird.org/data/download", target = "_blank"),
               ", a community science platform hosting millions of bird 
-              observations worldwide. SST data were obtained from ",
+              observations worldwide. SSTA data were obtained from ",
               a("NOAA 0.25-degree Daily Optimum Interpolation Sea Surface Temperature (OISST, Version 2.1)", 
                 href = " https://doi.org/10.25921/RE9P-PT57", target = "_blank"),
               ", and represents gridded weekly sea surface temperature for 
@@ -154,22 +165,22 @@ ui <- dashboardPage(
             br(),
             h4("Methods"),
             p("For the eBird observation dataset, I focused on traveling, 
-              stationary, or pelagic observations. I also removed duplicate 
-              records for the same group of observers, indicated by a group 
-              identification number, as it is likely these groups counted the 
+              stationary, or pelagic observations. I removed duplicate 
+              records from group observations, indicated by a group 
+              identification number, since these counts represent the 
               same individual birds. To avoid double-counting birds, I also only
               evaluated the daily maximum count on days where multiple observers
-              recorded the same species on the same day. Outliers were left in 
-              the data since shearwaters are known for forming massive rafts and
-              excluding this data could obscure these patterns. Weekly SST 
-              anomalies (SSTA) were aggregated to monthly averages for 
+              recorded the same species on the same day. I did not remove
+              outlier counts since shearwaters are known for forming massive 
+              rafts and excluding them could obscure these patterns. Weekly SSTA
+              were aggregated to monthly averages for 
               visualization and correlation analysis. Since shearwaters have a 
               strong seasonal cycle, I chose to evaluate SSTA instead of SST. 
               To contextualize variability in Shearwater counts, El 
               Niño-Southern Oscillations (ENSO) phase annotations were created 
-              following the Oceanic Niño Index (ONI) classifications from ",
-              a("NOAA / Golden Gate Weather Services.", 
-                href = "https://ggweather.com/enso/", target = "_blank")),
+              following the Relative Oceanic Niño Index (RONI) classifications from ",
+              a("NOAA Climate Prediction Center.", 
+                href = "https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso/roni/", target = "_blank")),
             
             br(),
             h4("Key Findings"),
