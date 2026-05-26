@@ -1,4 +1,4 @@
-# Shearwater Sightings and SST off the Coast of California - Working in Progress
+# Seabird Sightings and Climate Data off the Coast of California
 
 ## Investigating
 Is there a shift in seasonal timing of Sooty (SOSH) and Pink-footed Shearwatersn (PFSH) appearances off the coast of California and is this shift driven by sea surface temperature. Project using eBird community science data and National Ocean and Atmospheric Administration (NOAA) data.
