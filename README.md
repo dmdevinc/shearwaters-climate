@@ -6,8 +6,8 @@
 
 ## Data
  - **eBird**: SOSH and PFSH sightings in Bodega and Monterey Bays from January 1st, 2015 - December 31st, 2025.
-   Source: eBird Basic Dataset. Version: 2025. Cornell Lab of Ornithology, Ithaca, New York. https://ebird.org/data/download.
+     - Source: eBird Basic Dataset. Version: 2025. Cornell Lab of Ornithology, Ithaca, New York. https://ebird.org/data/download.
  - **NOAA**: sea surface temperature (sst) data for Monterey Bay from February 28, 2020 to December 26, 2025.
-   Source: Huang, Boyin; Liu, Chunying; Banzon, Viva F.; Freeman, Eric; Graham, Garrett; Hankins, William; Smith, Thomas M.; Zhang, Huai-Min. (2020): NOAA 0.25-degree Daily Optimum Interpolation Sea Surface Temperature (OISST), Version 2.1. [indicate subset used]. NOAA National Centers for Environmental Information. https://doi.org/10.25921/RE9P-PT57. Accessed [February 2026].
+     - Source: Huang, Boyin; Liu, Chunying; Banzon, Viva F.; Freeman, Eric; Graham, Garrett; Hankins, William; Smith, Thomas M.; Zhang, Huai-Min. (2020): NOAA 0.25-degree Daily Optimum Interpolation Sea Surface Temperature (OISST), Version 2.1. [indicate subset used]. NOAA National Centers for Environmental Information. https://doi.org/10.25921/RE9P-PT57. Accessed [February 2026].
 
 
