@@ -1,0 +1,150 @@
+/* ========================================================
+   COLOR PALETTE
+======================================================== */
+
+:root {
+  --background-color: #fafafa;
+  --background-secondary: #f5f5f5;
+
+  --text-color: #333333;
+  --text-muted: #666666;
+  --text-subtle: #999999;
+
+  --border-color: #e0e0e0;
+
+  --accent-brown: #3E2A14;
+
+  --green-mid: #92A081;
+  --green-deep: #2F4A3A;
+
+  --blue-light: #A9BCC6;
+  --blue-mid: #6C8390;
+  --blue-deep: #2E4A5A;
+
+  --tan-light: #B5A494;
+  --tan-deep: #4A3628;
+}
+
+
+/* ========================================================
+   GLOBAL
+======================================================== */
+
+/* body paragraphs */
+body {
+  font-size: 15px;
+  color: var(--text-color);
+  background-color: var(--background-color);
+  line-height: 1.6;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.content-wrapper,
+.right-side {
+  background-color: var(--background-color);
+}
+
+.content {
+  padding: 25px;
+}
+
+
+/* ========================================================
+   HEADER
+======================================================== */
+
+.main-header .navbar,
+.main-header .logo {
+  background-color: var(--blue-deep) !important;
+  color: var(--background-secondary) !important;
+}
+
+/* underline */
+.main-header {
+  border-bottom: 5px solid var(--blue-mid);
+  z-index: 1030 !important;
+  position: relative;
+}
+
+/* sidebar toggle */
+.main-header .navbar .sidebar-toggle {
+  color: var(--background-secondary) !important;
+}
+
+.main-header .navbar .sidebar-toggle:hover {
+  background-color: rgba(255,255,255,0.08) !important;
+}
+
+
+/* ========================================================
+   SIDEBAR
+======================================================== */
+
+/* sidebar background */
+.main-sidebar,
+.left-side {
+  border-right: 1px solid var(--border-color);
+}
+
+/* sidebar top margin */
+.sidebar-menu {
+  margin-top: 10px;
+}
+
+/* sidebar text */
+.sidebar-menu > li > a {
+  color: var(--background-secondary) !important;
+  font-size: 14px;
+  padding: 12px 15px;
+}
+
+/* sidebar hover */
+.sidebar-menu > li.active > a,
+.sidebar-menu > li > a:hover {
+  background-color: rgba(255,255,255,0.08) !important;
+}
+
+/* ========================================================
+   TAB HEADINGS (Interpretation, Graphs, etc.)
+======================================================== */
+
+.tab-pane h3 {
+  padding: 5px 7px;
+  border-radius: 4px;
+  color: var(--background-color);
+}
+
+.tab-pane h4,
+.tab-pane h5,
+.tab-pane h6 {
+  background-color: var(--background-secondary);
+  border-left: 4px solid var(--blue-mid);
+  padding: 10px 14px;
+  border-radius: 4px;
+  width: 100%;
+  display: block;
+}
+
+/* ========================================================
+   BOXES
+======================================================== */
+
+/* Box header background colors*/
+.box-header {
+  background-color: var(--blue-deep) !important;
+  border-bottom: 3px solid var(--blue-mid);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+
+/* Remove all box borders */
+.box {
+  border: none !important;
+  background-color: white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.box-body {
+  padding-left: 18px;
+  padding-right: 18px;
+}

@@ -1,0 +1,67 @@
+---
+title: "NOAA Data Cleaning Script"
+author: "Danielle D."
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+    theme: flatly
+---
+
+# Introduction
+
+Open source sea surface temperature data (sst) in Celsius for Monterey and 
+Sonoma counties.
+
+Data sourced from NOAA [dataset name], accessed on [date]. 
+NOAA data are in the public domain.
+
+SST has ties to marine heatwaves, upwelling strength, and forage fish 
+distribution, all of which could affect arrival for shearwaters. 
+
+# Loading Workspace & Set Up
+
+```{r}
+# packages
+library(readr) # read data
+library(janitor) # standardize column names
+library(tidyverse) # data manipulation
+library(lubridate) # date handling
+library(ggplot2) # plotting
+```
+
+```{r}
+library(here)
+library(readr) # read_csv
+
+#  Define path to your raw SST data (outside project)
+raw_data_dir <- "~/Desktop/R/Shearwater raw data/"
+
+#  Load CSV for Sonoma County SST
+sonoma_sst <- read_csv(
+  file.path(
+    raw_data_dir,
+    "S_ncdc_oisst_v2_avhrr_by_time_zlev_lat_lon_df91_44aa_5324.csv"   # replace with your CSV filename
+  ),
+  show_col_types = FALSE
+)
+
+# ⃣ Load CSV for Monterey County SST
+monterey_sst <- read_csv(
+  file.path(
+    raw_data_dir,
+    "M_ncdc_oisst_v2_avhrr_by_time_zlev_lat_lon_9cc6_587b_5479.csv"  # replace with your CSV filename
+  ),
+  show_col_types = FALSE
+)
+
+head(monterey_sst)
+head(sonoma_sst)
+```
+
+# Integrity Analysis
+
+# Changes to Data Based on Integrity Analyses
+
+# Explore Clean Data

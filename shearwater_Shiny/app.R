@@ -56,8 +56,7 @@ species_choices <- levels(data$common_name)
 
 # === UI ===
 ui <- dashboardPage(
-  skin = "blue", 
-  
+
   dashboardHeader(
     title = "Shearwater Watch",
     titleWidth = 230
@@ -86,12 +85,17 @@ ui <- dashboardPage(
     ),
     conditionalPanel(
       condition = "input.sidebar == 'tab_sst'",
-      checkboxInput("log_scale", "Log Scale (counts)", TRUE)
+      checkboxInput("log_scale_sst", "Log Scale (counts)", TRUE)
     ),
     hr()
   ),
   
   dashboardBody(
+    
+    tags$head(
+      tags$link(rel = "stylesheet", href = "style.css")
+    ),
+    
     tabItems(
       
       # === Tab: Overview ===
@@ -102,101 +106,89 @@ ui <- dashboardPage(
         fluidRow(
           box(
             title = "About this Project",
-            width = 8, offset = 1,
+            width = 7, offset = 1,
             status = "primary", solidHeader = TRUE,
-            p("One of the seasonal joys in the Monterey Bay Area is witnessing 
+            p("One of the seasonal joys of the Monterey Bay Area is witnessing 
               thick rafts of shearwaters on the ocean as they migrate northward 
               from their southern breeding grounds. While living in the area, I 
               observed this phenomenon for many years and was inspired to create 
-              this Shiny Dashboard to investigate it.", 
-              br(),
-              br(),
-              tags$b("This project 
+              this Shiny Dashboard to investigate it. This project 
               aims to visualize trends in annual shearwater counts in 
-              Monterey County, annual arrival timing, and the effect of 
-              sea surface temperature anomalies (SSTA) on shearwater counts."))
-        ),
-        
-        box(
-          title = "Code",
-          width = 4,
-          status = "info", solidHeader = TRUE,
-          p("Data processing, aggregation, and visualization code available on ",
-             a("GitHub.", href = "https://github.com/dmdevinc", 
-                          target = "_blank"),
-             " For questions or collaborations please reach out via ",
-             a("LinkedIn.", href = "http://www.linkedin.com/in/danielle-devincenzi", 
-                          target = "_blank"),
-            br(),
-            br(),
-            "Built by Danielle Devincenzi using R Shiny.")
-        )
-        ),
-        
-        # --- Shearwaters ---
-        fluidRow(
-          box(
-            title = "Background and Methods",
-            width = 8, offset = 1,
-            status = "primary", solidHeader = TRUE,
+              Monterey County."),
             h4("Shearwaters"),
-            p("Shearwaters have one of the longest migrations in the animal 
-              kingdom, where they travel northward after breeding in the southern 
-              hemisphere to western North America and Europe. For this project, I 
-              focused on two species with similar life history strategies, the 
-              Sooty (SOSH) and Pink-footed Shearwaters (PFSH). PFSH are one of the
-              most abundant seabirds in the world, while SOSH are listed as 
-              vulnerable by the IUCN and endangered by Chile and Canada. Both of 
-              these species migrate through the Monterey Bay Area in spring and 
-              summer and face similar threats, including mortality from being
-              caught as fishery bycatch and pressure from habitat degradation and 
-              predators at their island breeding colonies.
-              More information about the life history of these species can be 
-              found at Birds of the World online",
-              a("(Pink-footed Shearwater,",
-                href = "https://birdsoftheworld.org/bow/species/pifshe/cur/introduction?login", 
-                target = "_blank"),
-              a("Sooty Shearwater)",
-                href = "https://birdsoftheworld.org/bow/species/sooshe/cur/introduction?login", 
-                target = "_blank"),
+            p("For this project, I focused on two species with similar life 
+               history strategies, Sooty (SOSH) and Pink-footed Shearwaters 
+               (PFSH). PFSH are one of the
+               most abundant seabirds in the world, while SOSH are listed as 
+               vulnerable by the IUCN and endangered by Chile and Canada. Both of 
+               these species migrate north from the southern hemisphere, passing
+               through the Monterey Bay Area in spring and 
+               summer. (Learn more about these spieces at Birds of the World -",
+               a("Pink-footed Shearwater,",
+                 href = "https://birdsoftheworld.org/bow/species/pifshe/cur/introduction?login", 
+                 target = "_blank"),
+               a("Sooty Shearwater)",
+                 href = "https://birdsoftheworld.org/bow/species/sooshe/cur/introduction?login", 
+                 target = "_blank"),
             ),
             h4("Methods"),
             p("For the eBird observation dataset, I focused on traveling, 
-              stationary, or pelagic observations. I removed duplicate 
-              records from group observations, indicated by a group 
-              identification number, since these counts represent the 
-              same individual birds. To avoid double-counting birds, I also only
-              evaluated the daily maximum count on days where multiple observers
-              recorded the same species on the same day. I did not remove
-              outlier counts since shearwaters are known for forming massive 
-              rafts and excluding them could obscure these patterns. Weekly SSTA
-              were aggregated to monthly averages for 
-              visualization and correlation analysis. Since shearwaters have a 
-              strong seasonal cycle, I chose to evaluate SSTA instead of SST. 
-              To contextualize variability in Shearwater counts, El 
-              Niño-Southern Oscillations (ENSO) phase annotations were created 
-              following the Relative Oceanic Niño Index (RONI) classifications from ",
+                stationary, or pelagic observations. I removed duplicate 
+                records from group observations, indicated by a group 
+                identification number, since these counts represent the 
+                same individual birds. To avoid double-counting birds, I also only
+                evaluated the daily maximum count on days where multiple observers
+                recorded the same species on the same day. I did not remove
+                outlier counts since shearwaters are known for forming massive 
+                rafts and excluding them could obscure these patterns."),
+              p("Weekly SSTA
+                were aggregated to monthly averages for 
+                visualization and correlation analysis. Since shearwaters have a 
+                strong seasonal cycle, I chose to evaluate SSTA instead of SST. 
+                To contextualize variability in Shearwater counts, El 
+                Niño-Southern Oscillations (ENSO) phase annotations were created 
+                following the Relative Oceanic Niño Index (RONI) classifications from ",
               a("NOAA Climate Prediction Center.", 
                 href = "https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso/roni/", target = "_blank"))
           ),
           
-        box(
-          title = "Data Sources",
-          width = 4,
-          status = "info", solidHeader = TRUE,
-          p("Shearwater observation data in Monterey County between 2015 and 
-             2025 were sourced from ",
-            a("eBird (Cornell Lab of Ornithology, Ithaca, New York, version 2025)", 
-            href = "  https://ebird.org/data/download", target = "_blank"),
-            br(),
-            br(),
-            "SSTA data were obtained from ",
-            a("NOAA 0.25-degree Daily Optimum Interpolation Sea Surface Temperature (OISST, Version 2.1)", 
-              href = " https://doi.org/10.25921/RE9P-PT57", target = "_blank"),
-            " for Monterey Bay from 2020 to 2025.")
-        )
-        )
-      ),
+          box(
+            width = 5,
+            solidHeader = TRUE,
+            status = "primary",
+            
+            tags$div(
+              style = "text-align:center;",
+              img(
+                src = "sooty.jpg",
+                width = "97%",
+                style = "border-radius: 8px; margin-bottom: 4px;"
+              ),
+              tags$small("Sooty Shearwater, Johann Friedrich Naumann")
+            )
+          ),
+          
+          box(
+            title = "Data & Code",
+            width = 5,
+            status = "info", solidHeader = TRUE,
+            p("Data processing and visualization code available on ",
+               a("GitHub.", href = "https://github.com/dmdevinc", 
+                            target = "_blank"),
+               " For questions or collaborations please reach out via ",
+               a("LinkedIn.", href = "http://www.linkedin.com/in/danielle-devincenzi", 
+                            target = "_blank")),
+            p(a("eBird (Cornell Lab of Ornithology, Ithaca, New York, version 2025)", 
+                href = "  https://ebird.org/data/download", target = "_blank"),
+              "- Shearwater observation data in Monterey County between 2015 and 
+               2025."
+              ),
+            p(a("NOAA 0.25-degree Daily Optimum Interpolation Sea Surface Temperature (OISST, Version 2.1)", 
+                href = " https://doi.org/10.25921/RE9P-PT57", target = "_blank"),
+              "- SSTA data for Monterey Bay from 2020 to 2025.")
+            )
+          )
+        ),
       
       # === Tab: Abundance & Trends ===
       tabItem(
@@ -285,9 +277,9 @@ ui <- dashboardPage(
             title = "Interpretation Note",
             width = 12, status = "primary", solidHeader = FALSE,
             p("Observations spatially cluster around submarine canyons near the
-              Monterey Bay mouth where upwelling occurs driving high prey 
+              Monterey Bay mouth where upwelling occurs and drives high prey 
               concentrations, though pelagic tour routes likely introduce
-              detection bias on shearwater offshore distribution.")
+              detection bias on offshore distribution.")
           )
         )
       )
@@ -559,7 +551,7 @@ server <- function(input, output, session) {
 # === Output: map ===
 output$plot_map <- renderPlot({
   
-  # set crs and species toggle option (since seperate df from prior graphs)
+  # set crs and species toggle option (since separate df from prior graphs)
   noaa_m_sf <- sst_df %>%
     st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
   bird_sf <- bird_df %>%
@@ -572,16 +564,22 @@ output$plot_map <- renderPlot({
   
   # filter to just the cities you want in your bounding box
   cities_sub <- cities %>%
-    filter(NAME %in% c("Monterey", "Santa Cruz"))
+    filter(NAME %in% c("Monterey"))
   
   ggplot() +
-   geom_sf(data = land, fill = "#F0EBD8") +
-    geom_sf(data = coast, color = "#D4C8A8", linewidth = 1) +
+   geom_sf(data = land, fill = "#D8C3A5") +
+    geom_sf(data = coast, color = alpha("#6B5B4D", 0.2), linewidth = 1) +
     geom_sf(data = bird_sf, aes(color = common_name), size = 4, alpha = 0.5) +
     geom_sf(data = noaa_m_sf, aes(color = "SST Record Locations"), 
-            size = 4, shape = 4, stroke = 1) +
-    geom_sf_text(data = cities_sub, aes(label = NAME), size = 5, 
-                 nudge_x = 0.28, nudge_y = 0.05, color = "gray20") +
+            size = 2, stroke = 1) +
+    geom_sf_text(
+      data = cities_sub,
+      aes(label = NAME),
+      size = 3.8,
+      nudge_x = 0.18,
+      nudge_y = -0.04,
+      color = scales::alpha("#4B5A63", 0.5)
+    ) +
     scale_color_manual(
       name = "Data Source",
       values = c(
@@ -592,26 +590,38 @@ output$plot_map <- renderPlot({
     ) +
     coord_sf(xlim = c(-123.9, -120.5), ylim = c(35.2, 37.1)) +
     annotation_north_arrow(
-      location = "tr", which_north = "true",
-      style = north_arrow_orienteering(line_col = "black", fill = c("black", "black")),
-                  height = unit(1, "cm"), width = unit(0.9, "cm")
+      location = "bl",
+      which_north = "true",
+      style = north_arrow_orienteering(
+        line_col = "#2F3A40",
+        fill = c("#2F3A40", "#7FA6B2")
+      ),
+      height = unit(1, "cm"),
+      width  = unit(0.8, "cm")
     ) +
     annotation_scale(
-      location = "br", width_hint = 0.4,
-      bar_cols = c("black", "white"), text_cex = 0.75
+      location = "br",
+      width_hint = 0.4,
+      bar_cols = c("#4B5A63", "#7FA6B2"),
+      text_cex = 0.75,
+      text_col = "#4B5A63",
+      line_col = "#4B5A63"
     ) +
     theme_minimal(base_size = 13) +
     theme(
-      panel.grid.major = element_line(color = "gray90"),
-      axis.text = element_text(size = 14, color = "darkgray"),
+      panel.grid.major = element_line(color = alpha("#2F3A40", 0.2)),
+      axis.text = element_text(size = 12, color = "darkgray"),
       axis.title = element_blank(),
       legend.title = element_blank(),
-      legend.position = c(0.999, 0.08),
+      legend.position = c(0.97, 0.80),
       legend.justification = c(1, 0),
       legend.box.background = element_rect(
-        fill = "white", color = "black", linewidth = 1),
+        fill = "#E7D8C5",
+        color = alpha("#E7D8C5", 0.4),
+        linewidth = 0.3
+      ),
       legend.text = element_text(size = 14),
-      panel.background = element_rect(fill = "aliceblue", color = NA)
+      panel.background = element_rect(fill = "#7FA6B2", color = NA)
     )
 })
 
